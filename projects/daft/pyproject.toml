@@ -1,0 +1,27 @@
+[project]
+name = "daft-notebooks"
+version = "0.1.0"
+description = "Notebooks for exploring Daft and related data engineering topics"
+requires-python = ">=3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29",
+    "jupytext>=1.16",
+    "nbstripout>=0.7",
+    "ruff>=0.11",
+    "ty>=0.0.1a7",
+]
+
+[tool.ruff]
+target-version = "py313"
+
+[tool.ruff.lint]
+extend-select = ["I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"notebooks/*.py" = ["E402"]
+
+[tool.ty.src]
+root = "notebooks/"

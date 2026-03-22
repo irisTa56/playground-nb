@@ -1,0 +1,25 @@
+[tools]
+uv = "latest"
+
+[tasks."nb:sync"]
+description = "Generate .ipynb from all .py notebooks"
+run = """
+for f in notebooks/*.py; do
+  [ -f "$f" ] && jupytext --to notebook "$f"
+done
+"""
+
+[tasks."nb:clean"]
+description = "Remove all generated .ipynb files"
+run = "rm -f notebooks/*.ipynb"
+
+[tasks.lint]
+description = "Lint and format with ruff"
+run = """
+ruff check --fix .
+ruff format .
+"""
+
+[tasks.typecheck]
+description = "Type check with ty"
+run = "ty check"
