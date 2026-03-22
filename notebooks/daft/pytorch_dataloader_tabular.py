@@ -377,11 +377,10 @@ df_daft = df_daft.with_columns(
 # Lazy execution: trigger with .collect()
 df_daft = df_daft.collect()
 
-# Every row must match exactly one category; 0 means unknown value
-assert df_daft.agg(col("_matched").min()).to_pydict()["_matched"][0] == 1, (
-    "Unknown furnishingstatus values found"
-)
-df_daft = df_daft.exclude("_matched").collect()  # Drop helper column after validation
+# Validate & drop helper column via pydict (no extra Daft scans)
+data = df_daft.to_pydict()
+assert min(data.pop("_matched")) == 1, "Unknown furnishingstatus values found"
+df_daft = daft.from_pydict(data).collect()  # type: ignore[arg-type]
 
 print(f"Daft — rows: {len(df_daft)}")
 df_daft.to_pandas().head()
