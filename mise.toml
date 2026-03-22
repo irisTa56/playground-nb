@@ -10,6 +10,13 @@ run = """
 gitleaks protect -v --staged
 lychee -v .
 rumdl check
+
+proj_dir=projects/daft
+if git diff --cached --name-only | grep -q "^${proj_dir}/"; then
+  echo "==> Staged files in ${proj_dir}/ detected, running pre-commit..."
+  cd "$proj_dir"
+  mise run pre-commit
+fi
 """
 
 [tasks.format-md]

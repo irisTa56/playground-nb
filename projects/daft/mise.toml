@@ -1,11 +1,16 @@
 [tools]
 uv = "latest"
 
+[tasks.pre-commit]
+description = "Pre-commit checks for daft project"
+depends = ["nb:sync", "lint", "typecheck"]
+
 [tasks."nb:sync"]
 description = "Generate .ipynb from all .py notebooks"
 run = """
+shopt -s nullglob
 for f in notebooks/*.py; do
-  [ -f "$f" ] && jupytext --to notebook "$f"
+  uv run jupytext --to notebook "$f"
 done
 """
 
@@ -15,11 +20,13 @@ run = "rm -f notebooks/*.ipynb"
 
 [tasks.lint]
 description = "Lint and format with ruff"
+wait_for = ["nb:sync"]
 run = """
-ruff check --fix .
-ruff format .
+uv run ruff check --fix .
+uv run ruff format .
 """
 
 [tasks.typecheck]
 description = "Type check with ty"
-run = "ty check"
+wait_for = ["nb:sync"]
+run = "uv run ty check"

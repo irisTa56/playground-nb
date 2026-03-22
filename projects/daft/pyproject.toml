@@ -2,7 +2,7 @@
 name = "daft-notebooks"
 version = "0.1.0"
 description = "Notebooks for exploring Daft and related data engineering topics"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = []
 
 [dependency-groups]
@@ -23,5 +23,5 @@ extend-select = ["I", "UP"]
 [tool.ruff.lint.per-file-ignores]
 "notebooks/*.py" = ["E402"]
 
-[tool.ty.src]
-root = "notebooks/"
+[tool.ty.environment]
+root = ["notebooks/"]
