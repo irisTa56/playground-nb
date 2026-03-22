@@ -2,9 +2,7 @@
 
 This repository is a playground for testing and experimenting with Jupyter Notebooks.
 
-## Project Setup
-
-In each project directory, run:
+## Setup
 
 ```shell
 mise install
