@@ -64,25 +64,26 @@ def _get_deps():
     return re.findall(r'#\s+"([^"]+)"', dep_section.group(1))
 
 
+def _run(cmd: list[str]) -> None:
+    with subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    ) as proc:
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            print(line, end="", flush=True)
+    if proc.returncode:
+        raise subprocess.CalledProcessError(proc.returncode, cmd)
+
+
 def _setup():
     deps = _get_deps()
     try:
         subprocess.run(["uv", "--version"], capture_output=True, check=True)
     except FileNotFoundError:
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "uv"],
-            check=True,
-            stdout=sys.stdout,
-            stderr=sys.stderr,
-        )
+        _run([sys.executable, "-m", "pip", "install", "uv"])
 
     flags = [] if sys.prefix != sys.base_prefix else ["--system"]
-    subprocess.run(
-        ["uv", "pip", "install", *flags, *deps],
-        check=True,
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-    )
+    _run(["uv", "pip", "install", *flags, *deps])
 
 
 _setup()
