@@ -1,4 +1,6 @@
 [tools]
+python = "3.12"
+uv = "latest"
 gitleaks = "latest"
 cargo-binstall = "latest"
 "cargo:lychee" = "latest"
@@ -6,19 +8,52 @@ cargo-binstall = "latest"
 
 [tasks.pre-commit]
 description = "Run pre-commit checks"
-run = """
-gitleaks protect -v --staged
-lychee -v .
-rumdl check
+depends = [
+  "secrets",
+  "links",
+  "format-md",
+  "nb:sync",
+  "nb:stripout",
+  "lint",
+  "typecheck",
+]
 
-proj_dir=projects/daft
-if git diff --cached --name-only | grep -q "^${proj_dir}/"; then
-  echo "==> Staged files in ${proj_dir}/ detected, running pre-commit..."
-  cd "$proj_dir"
-  mise run pre-commit
-fi
-"""
+[tasks.secrets]
+description = "Scan for leaked secrets"
+run = "gitleaks protect -v --staged"
+
+[tasks.links]
+description = "Check for broken links"
+run = "lychee -v ."
 
 [tasks.format-md]
 description = "Format markdown files"
 run = "rumdl check --fix"
+
+[tasks."nb:sync"]
+description = "Generate .ipynb from all .py notebooks"
+run = "find notebooks -name '*.py' -exec uv run jupytext --to notebook {} +"
+
+[tasks."nb:stripout"]
+description = "Strip output from all .ipynb notebooks"
+wait_for = ["nb:sync"]
+run = "find notebooks -name '*.ipynb' -exec uv run nbstripout {} +"
+
+[tasks.lint]
+description = "Lint and format with ruff"
+wait_for = ["nb:sync"]
+run = """
+uv run ruff check --fix .
+uv run ruff format .
+"""
+
+[tasks.typecheck]
+description = "Type check notebooks with ty (per-script PEP 723 venv)"
+wait_for = ["nb:sync"]
+run = """
+set -euo pipefail
+find notebooks -name '*.py' -print0 | while IFS= read -r -d '' f; do
+  uv sync --script "$f"
+  uv run ty check --python "$(uv python find --script "$f")" "$f"
+done
+"""

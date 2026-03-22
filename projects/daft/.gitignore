@@ -1,9 +1,0 @@
-# Data files (downloaded at runtime)
-data/
-
-# Virtual environment
-.venv/
-
-# Python
-__pycache__/
-*.pyc
