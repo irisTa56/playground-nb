@@ -1,4 +1,5 @@
 [tools]
+python = "3.12"
 uv = "latest"
 
 [tasks.pre-commit]

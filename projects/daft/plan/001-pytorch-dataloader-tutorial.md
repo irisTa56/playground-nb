@@ -89,22 +89,22 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-011 | PEP 723 header cell with `torch`, `pandas`, `polars`, `getdaft`, `scikit-learn`, `matplotlib`, `kaggle` and `_setup()` | | |
-| TASK-012 | Environment verification cell: print Python version and key package versions | | |
-| TASK-013 | Device detection cell (`get_device()` returning `cuda` / `mps` / `cpu`) | | |
-| TASK-014 | Housing dataset download via Kaggle CLI with existence check and manual download URL fallback | | |
-| TASK-015 | Explain `Dataset` ↔ `DataLoader` relationship in Markdown cells | | |
-| TASK-016 | Minimal `TensorDataset` + `DataLoader` example as warm-up | | |
-| TASK-017 | Walk through core parameters: `batch_size`, `shuffle`, `num_workers`, `pin_memory`, `collate_fn` (overview only; deep-dive in text notebook) | | |
-| TASK-018 | macOS note: `multiprocessing_context="spawn"` helper (`make_dataloader`) | | |
-| TASK-019 | Pandas preprocessing (§2.1): `read_csv` → encoding → `StandardScaler` → `train_test_split` → `.to_numpy()` | | |
-| TASK-020 | Polars preprocessing (§2.2): `read_csv` → expression-based encoding → `.to_numpy()` (Arrow zero-copy) | | |
-| TASK-021 | Polars Lazy API (§2.2): `scan_csv` → predicate pushdown / projection pushdown demo | | |
-| TASK-022 | Daft preprocessing (§2.3): `read_csv` → UDF → `.collect()` → tensor conversion | | |
-| TASK-023 | Shared `HousePriceDataset(Dataset)` class (§2.4) | | |
-| TASK-024 | Lightweight training loop (few epochs, `nn.Linear`) to verify end-to-end | | |
-| TASK-025 | Comparison table Markdown cell (§2.5) | | |
-| TASK-026 | Generate `.ipynb` and validate | | |
+| TASK-011 | PEP 723 header cell with `torch`, `pandas`, `polars`, `getdaft`, `scikit-learn`, `matplotlib`, `kaggle` and `_setup()` | ✅ | 2026-03-22 |
+| TASK-012 | Environment verification cell: print Python version and key package versions | ✅ | 2026-03-22 |
+| TASK-013 | Device detection cell (`get_device()` returning `cuda` / `mps` / `cpu`) | ✅ | 2026-03-22 |
+| TASK-014 | Housing dataset download via Kaggle CLI with existence check and manual download URL fallback | ✅ | 2026-03-22 |
+| TASK-015 | Explain `Dataset` ↔ `DataLoader` relationship in Markdown cells | ✅ | 2026-03-22 |
+| TASK-016 | Minimal `TensorDataset` + `DataLoader` example as warm-up | ✅ | 2026-03-22 |
+| TASK-017 | Walk through core parameters: `batch_size`, `shuffle`, `num_workers`, `pin_memory`, `collate_fn` (overview only; deep-dive in text notebook) | ✅ | 2026-03-22 |
+| TASK-018 | macOS note: `multiprocessing_context="spawn"` helper (`make_dataloader`) | ✅ | 2026-03-22 |
+| TASK-019 | Pandas preprocessing (§2.1): `read_csv` → encoding → `StandardScaler` → `train_test_split` → `.to_numpy()` | ✅ | 2026-03-22 |
+| TASK-020 | Polars preprocessing (§2.2): `read_csv` → expression-based encoding → `.to_numpy()` (Arrow zero-copy) | ✅ | 2026-03-22 |
+| TASK-021 | Polars Lazy API (§2.2): `scan_csv` → predicate pushdown / projection pushdown demo | ✅ | 2026-03-22 |
+| TASK-022 | Daft preprocessing (§2.3): `read_csv` → UDF → `.collect()` → tensor conversion | ✅ | 2026-03-22 |
+| TASK-023 | Shared `HousePriceDataset(Dataset)` class (§2.4) | ✅ | 2026-03-22 |
+| TASK-024 | Lightweight training loop (few epochs, `nn.Linear`) to verify end-to-end | ✅ | 2026-03-22 |
+| TASK-025 | Comparison table Markdown cell (§2.5) | ✅ | 2026-03-22 |
+| TASK-026 | Generate `.ipynb` and validate | ✅ | 2026-03-22 |
 
 ### Phase 3 — Text Data (`notebooks/pytorch_dataloader_text.py`)
 
