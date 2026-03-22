@@ -1,25 +1,17 @@
 [tools]
+gitleaks = "latest"
 cargo-binstall = "latest"
 "cargo:lychee" = "latest"
 "cargo:rumdl" = "latest"
 
 [tasks.pre-commit]
-description = "Run all pre-commit checks"
-depends = [
-  "format-md",
-  "link-check",
-]
+description = "Run pre-commit checks"
+run = """
+gitleaks protect -v --staged
+lychee .
+rumdl check
+"""
 
 [tasks.format-md]
 description = "Format markdown files"
-run = """
-if [ -z "$STAGED" ]; then
-  rumdl check --fix
-else
-  rumdl check
-fi
-"""
-
-[tasks.link-check]
-description = "Check if links are valid"
-run = "lychee ."
+run = "rumdl check --fix"
