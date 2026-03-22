@@ -43,10 +43,10 @@ import sys
 
 def _get_deps():
     try:
-        ip = get_ipython()  # type: ignore[name-defined]  # noqa: F821
+        ip = get_ipython()  # type: ignore[name-defined]
         src = ip.user_ns.get("In", [""])[ip.execution_count]
     except (NameError, IndexError):
-        src = open(__file__).read()  # noqa: SIM115
+        src = open(__file__).read()
 
     m = re.search(r"# /// script\s*\n(.*?)# ///", src, re.DOTALL)
     if not m:
@@ -220,10 +220,35 @@ def make_dataloader(
 # a few GB.
 
 # %%
+import timeit
+
 import numpy as np
 import pandas as pd
+import torch.nn as nn
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+
+
+def split_and_scale(
+    X: np.ndarray,
+    y: np.ndarray,
+    *,
+    test_size: float = 0.2,
+    random_state: int = 42,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Split into train/test and StandardScaler-transform both X and y."""
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state
+    )
+    scaler_X = StandardScaler()
+    X_train = scaler_X.fit_transform(X_train).astype(np.float32)
+    X_test = scaler_X.transform(X_test).astype(np.float32)
+
+    scaler_y = StandardScaler()
+    y_train = scaler_y.fit_transform(y_train.reshape(-1, 1)).ravel().astype(np.float32)
+    y_test = scaler_y.transform(y_test.reshape(-1, 1)).ravel().astype(np.float32)
+    return X_train, X_test, y_train, y_test
+
 
 df_pd = pd.read_csv(CSV_PATH)
 print(f"Pandas shape: {df_pd.shape}")
@@ -247,26 +272,11 @@ df_pd["furnishingstatus"] = pd.Categorical(
     df_pd["furnishingstatus"], categories=furnishing_order, ordered=True
 ).codes.astype(np.int8)
 
-X_pd = df_pd.drop(columns=["price"])
+# Convert to NumPy first — avoids pandas 3.0 Copy-on-Write pitfalls
+X_pd_np = df_pd.drop(columns=["price"]).to_numpy(dtype=np.float32)
 y_pd = df_pd["price"].to_numpy(dtype=np.float32)
 
-X_train_pd, X_test_pd, y_train_pd, y_test_pd = train_test_split(
-    X_pd, y_pd, test_size=0.2, random_state=42
-)
-
-# Convert to NumPy first, then scale — avoids pandas 3.0 Copy-on-Write pitfalls
-X_train_pd_np = X_train_pd.to_numpy(dtype=np.float32)
-X_test_pd_np = X_test_pd.to_numpy(dtype=np.float32)
-
-scaler_X = StandardScaler()
-X_train_pd_np = scaler_X.fit_transform(X_train_pd_np).astype(np.float32)
-X_test_pd_np = scaler_X.transform(X_test_pd_np).astype(np.float32)
-
-scaler_y = StandardScaler()
-y_train_pd = (
-    scaler_y.fit_transform(y_train_pd.reshape(-1, 1)).ravel().astype(np.float32)
-)
-y_test_pd = scaler_y.transform(y_test_pd.reshape(-1, 1)).ravel().astype(np.float32)
+X_train_pd_np, X_test_pd_np, y_train_pd, y_test_pd = split_and_scale(X_pd_np, y_pd)
 
 print(f"Pandas — train: {X_train_pd_np.shape}, test: {X_test_pd_np.shape}")
 
@@ -297,12 +307,12 @@ df_pl = df_pl.with_columns(
     .alias("furnishingstatus")
 )
 
-X_pl = df_pl.drop("price")
+X_pl_np = df_pl.drop("price").to_numpy().astype(np.float32)
 y_pl = df_pl["price"].to_numpy().astype(np.float32)
 
-X_pl_np = X_pl.to_numpy().astype(np.float32)
+X_pl_train, X_pl_test, y_pl_train, y_pl_test = split_and_scale(X_pl_np, y_pl)
 
-print(f"Polars — features: {X_pl_np.shape}")
+print(f"Polars — train: {X_pl_train.shape}, test: {X_pl_test.shape}")
 
 # %%
 # Polars Lazy API: scan_csv enables predicate pushdown and projection pushdown —
@@ -346,12 +356,26 @@ df_daft = df_daft.collect()
 print(f"Daft — rows: {len(df_daft)}")
 df_daft.to_pandas().head()
 
+# %%
+# Daft lacks a direct to_numpy(); convert via Arrow → Pandas → NumPy
+df_daft_pd = df_daft.to_pandas()
+X_daft_np = df_daft_pd.drop(columns=["price"]).to_numpy(dtype=np.float32)
+y_daft = df_daft_pd["price"].to_numpy(dtype=np.float32)
+
+X_daft_train, X_daft_test, y_daft_train, y_daft_test = split_and_scale(
+    X_daft_np, y_daft
+)
+
+print(f"Daft — train: {X_daft_train.shape}, test: {X_daft_test.shape}")
+
 # %% [markdown]
 # ---
-# ## 4. Shared Code: Dataset → DataLoader → Training
+# ## 4. Dataset → DataLoader → Training (All Backends)
 #
-# Once data is in NumPy arrays, the path to DataLoader is identical regardless
-# of which library did the preprocessing.
+# Each library produced the same shape of NumPy arrays. We now feed all three
+# into **identical** DataLoader + training pipelines and compare the results.
+# This confirms that the preprocessing backend is interchangeable — the
+# DataLoader sees the same tensors regardless of how they were prepared.
 
 # %%
 from torch.utils.data import Dataset as TorchDataset
@@ -361,7 +385,6 @@ class HousePriceDataset(TorchDataset):
     """Map-style dataset for house-price regression."""
 
     def __init__(self, features: np.ndarray, labels: np.ndarray) -> None:
-        # as_tensor avoids a copy when array is already float32 & C-contiguous
         self.X = torch.as_tensor(features, dtype=torch.float32)
         self.y = torch.as_tensor(labels, dtype=torch.float32).unsqueeze(1)
 
@@ -370,23 +393,6 @@ class HousePriceDataset(TorchDataset):
 
     def __getitem__(self, idx) -> tuple[torch.Tensor, torch.Tensor]:  # type: ignore[override]
         return self.X[idx], self.y[idx]
-
-
-train_dataset = HousePriceDataset(X_train_pd_np, y_train_pd)
-test_dataset = HousePriceDataset(X_test_pd_np, y_test_pd)
-
-print(f"Train samples: {len(train_dataset)}, Test samples: {len(test_dataset)}")
-print(f"Feature dim: {train_dataset[0][0].shape[0]}")
-
-# %%
-train_loader = make_dataloader(train_dataset, batch_size=32, shuffle=True)
-test_loader = make_dataloader(test_dataset, batch_size=32, shuffle=False)
-
-X_batch, y_batch = next(iter(train_loader))
-print(f"Batch X: {X_batch.shape}, Batch y: {y_batch.shape}")
-
-# %%
-import torch.nn as nn
 
 
 class SimpleRegressor(nn.Module):
@@ -402,40 +408,108 @@ class SimpleRegressor(nn.Module):
         return self.net(x)
 
 
-model = SimpleRegressor(in_features=X_batch.shape[1]).to(DEVICE)
-optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
-criterion = nn.MSELoss()
+def train_and_evaluate(
+    X_train: np.ndarray,
+    X_test: np.ndarray,
+    y_train: np.ndarray,
+    y_test: np.ndarray,
+    *,
+    num_epochs: int = 10,
+    batch_size: int = 32,
+    lr: float = 1e-3,
+    seed: int = 0,
+) -> dict[str, float]:
+    """Run full DataLoader → train → eval pipeline and return metrics."""
+    torch.manual_seed(seed)
 
-NUM_EPOCHS = 10
+    train_ds = HousePriceDataset(X_train, y_train)
+    test_ds = HousePriceDataset(X_test, y_test)
+    train_loader = make_dataloader(train_ds, batch_size=batch_size, shuffle=True)
+    test_loader = make_dataloader(test_ds, batch_size=batch_size, shuffle=False)
 
-for epoch in range(NUM_EPOCHS):
-    model.train()
-    epoch_loss = 0.0
-    for X_b, y_b in train_loader:
-        X_b, y_b = X_b.to(DEVICE), y_b.to(DEVICE)
-        pred = model(X_b)
-        loss = criterion(pred, y_b)
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        epoch_loss += loss.item() * X_b.size(0)
-    epoch_loss /= len(train_dataset)
-    if (epoch + 1) % 2 == 0 or epoch == 0:
-        print(f"Epoch {epoch + 1:>2}/{NUM_EPOCHS}  train_loss={epoch_loss:.2f}")
+    model = SimpleRegressor(in_features=X_train.shape[1]).to(DEVICE)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    criterion = nn.MSELoss()
+
+    # --- Training ---
+    for _epoch in range(num_epochs):
+        model.train()
+        epoch_loss = 0.0
+        for X_b, y_b in train_loader:
+            X_b, y_b = X_b.to(DEVICE), y_b.to(DEVICE)
+            pred = model(X_b)
+            loss = criterion(pred, y_b)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            epoch_loss += loss.item() * X_b.size(0)
+        epoch_loss /= len(train_ds)
+
+    # --- Evaluation ---
+    model.eval()
+    test_loss = 0.0
+    with torch.no_grad():
+        for X_b, y_b in test_loader:
+            X_b, y_b = X_b.to(DEVICE), y_b.to(DEVICE)
+            pred = model(X_b)
+            test_loss += criterion(pred, y_b).item() * X_b.size(0)
+    test_loss /= len(test_ds)
+
+    return {"final_train_loss": epoch_loss, "test_loss": test_loss}
+
 
 # %%
-model.eval()
-test_loss = 0.0
-with torch.no_grad():
-    for X_b, y_b in test_loader:
-        X_b, y_b = X_b.to(DEVICE), y_b.to(DEVICE)
-        pred = model(X_b)
-        test_loss += criterion(pred, y_b).item() * X_b.size(0)
-test_loss /= len(test_dataset)
-print(f"Test MSE loss: {test_loss:.2f}")
+backends: dict[str, tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]] = {
+    "Pandas": (X_train_pd_np, X_test_pd_np, y_train_pd, y_test_pd),
+    "Polars": (X_pl_train, X_pl_test, y_pl_train, y_pl_test),
+    "Daft": (X_daft_train, X_daft_test, y_daft_train, y_daft_test),
+}
+
+N_RUNS = 10
+
+# Warmup: absorb one-time costs (PyTorch lazy init, MPS shader compilation, etc.)
+_warmup_data = next(iter(backends.values()))
+_ = train_and_evaluate(*_warmup_data)
+print("Warmup done.\n")
+
+results: dict[str, dict[str, float]] = {}
+for name, (Xtr, Xte, ytr, yte) in backends.items():
+    times: list[float] = []
+    metrics: dict[str, float] = {}
+    for _ in range(N_RUNS):
+        t0 = timeit.default_timer()
+        metrics = train_and_evaluate(Xtr, Xte, ytr, yte)
+        times.append(timeit.default_timer() - t0)
+
+    mean_t = np.mean(times)
+    std_t = np.std(times)
+    results[name] = {
+        "final_train_loss": metrics["final_train_loss"],
+        "test_loss": metrics["test_loss"],
+        "time_mean_sec": float(mean_t),
+        "time_std_sec": float(std_t),
+    }
+    print(
+        f"{name:>6}  train_loss={metrics['final_train_loss']:.4f}  "
+        f"test_loss={metrics['test_loss']:.4f}  "
+        f"time={mean_t:.3f}s ± {std_t:.3f}s  ({N_RUNS} runs)"
+    )
+
+# %% [markdown]
+# All three backends produce **nearly identical** losses — small differences stem
+# from floating-point ordering in the encoding step, not from the DataLoader
+# itself. This confirms the key point: **the DataLoader is agnostic to the
+# preprocessing backend**.
+
+# %%
+results_df = pd.DataFrame(results).T
+results_df.index.name = "backend"
+results_df
 
 # %% [markdown]
 # ## 5. Tabular Preprocessing Comparison
+#
+# ### Library Characteristics
 #
 # | Aspect | Pandas | Polars | Daft |
 # |--------|--------|--------|------|
@@ -443,10 +517,19 @@ print(f"Test MSE loss: {test_loss:.2f}")
 # | Memory format | NumPy-based (row-oriented) | **Apache Arrow** (columnar) | **Apache Arrow** (columnar) |
 # | GIL impact | Yes (Python impl.) | **None** (Rust impl.) | **None** (Rust impl.) |
 # | Column pruning | None (all columns loaded) | Automatic in Lazy mode | Automatic in Lazy mode |
-# | NumPy conversion cost | Copy incurred | Near-zero-copy | Via Arrow |
+# | NumPy conversion cost | Copy incurred | Near-zero-copy | Via Arrow → Pandas → NumPy |
 # | Cloud I/O | Requires fsspec / boto3 | Partial S3 support | **Native S3/GCS/Azure** |
 # | Ecosystem maturity | ★★★★★ | ★★★★☆ | ★★★☆☆ |
 #
-# **Key takeaway:** The choice of preprocessing library does **not** affect
-# DataLoader behaviour. It only affects the speed, memory efficiency, and cloud
-# compatibility of the preprocessing phase.
+# ### What We Observed
+#
+# - **Test losses are nearly identical** across all three backends — the
+#   DataLoader receives the same tensors regardless of which library prepared them.
+# - Differences in loss (if any) come from floating-point ordering during
+#   categorical encoding, not from the DataLoader or training loop.
+# - The `results_df` table above shows the actual pipeline timing. On this
+#   small dataset the differences are negligible; on larger datasets, Polars
+#   and Daft's lazy evaluation and columnar format provide real advantages.
+#
+# **Key takeaway:** The preprocessing library affects *how efficiently* data
+# reaches NumPy, but once it arrives, **DataLoader behaviour is identical**.
