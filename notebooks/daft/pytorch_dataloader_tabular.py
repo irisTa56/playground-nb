@@ -38,6 +38,7 @@
 # ]
 # ///
 
+import os
 import re
 import subprocess
 import sys
@@ -187,7 +188,7 @@ def make_dataloader(
     dataset: Dataset,
     batch_size: int = 32,
     shuffle: bool = True,
-    num_workers: int = 0 if sys.platform == "darwin" else 4,
+    num_workers: int = 0 if sys.platform == "darwin" else min(4, os.cpu_count() or 1),
     pin_memory: bool = DEVICE.type == "cuda",
     persistent_workers: bool | None = None,
     **kwargs,

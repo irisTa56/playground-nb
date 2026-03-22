@@ -17,6 +17,7 @@ depends = [
   "lint",
   "typecheck",
 ]
+run = "git diff --name-only -- 'notebooks/**/*.ipynb' | xargs git add"
 
 [tasks.secrets]
 description = "Scan for leaked secrets"
