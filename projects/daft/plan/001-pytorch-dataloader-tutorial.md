@@ -242,7 +242,7 @@ projects/daft/
 
 - [`pytorch-dataloader-extended.md`](../docs/pytorch-dataloader-extended.md) — full tutorial with all code samples
 - [PEP 723 — Inline script metadata](https://peps.python.org/pep-0723/)
-- [Jupytext documentation](https://jupytext.readthedocs.io/)
+- [Jupytext documentation](https://jupytext.readthedocs.io/en/latest/)
 - [nbstripout](https://github.com/kynan/nbstripout)
 - [uv documentation](https://docs.astral.sh/uv/)
 

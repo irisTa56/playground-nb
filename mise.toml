@@ -8,7 +8,7 @@ cargo-binstall = "latest"
 description = "Run pre-commit checks"
 run = """
 gitleaks protect -v --staged
-lychee .
+lychee -v .
 rumdl check
 """
 
