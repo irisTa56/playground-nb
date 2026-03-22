@@ -13,6 +13,8 @@
 # ---
 
 # %% [markdown]
+# [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/irisTa56/playground-nb/blob/main/notebooks/daft/pytorch_dataloader_tabular.ipynb)
+#
 # # PyTorch DataLoader — Tabular Data
 #
 # House-price prediction with **Pandas**, **Polars**, and **Daft**.
