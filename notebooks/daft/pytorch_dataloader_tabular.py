@@ -69,10 +69,20 @@ def _setup():
     try:
         subprocess.run(["uv", "--version"], capture_output=True, check=True)
     except FileNotFoundError:
-        subprocess.run([sys.executable, "-m", "pip", "install", "uv"], check=True)
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "uv"],
+            check=True,
+            stdout=sys.stdout,
+            stderr=sys.stderr,
+        )
 
     flags = [] if sys.prefix != sys.base_prefix else ["--system"]
-    subprocess.run(["uv", "pip", "install"] + flags + deps, check=True)
+    subprocess.run(
+        ["uv", "pip", "install", *flags, *deps],
+        check=True,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+    )
 
 
 _setup()
