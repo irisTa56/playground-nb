@@ -212,7 +212,7 @@ playground-nb/
 ├── .gitignore                  # Excludes data/, .venv/, __pycache__/, .ruff_cache/
 ├── .gitattributes              # *.ipynb filter=nbstripout
 ├── README.md                   # Setup instructions (local + Colab)
-├── plans/
+├── plan/
 │   └── 001-pytorch-dataloader-tutorial.md
 ├── docs/
 │   └── pytorch-dataloader-extended.md
