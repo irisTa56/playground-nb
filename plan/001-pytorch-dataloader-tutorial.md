@@ -1,9 +1,17 @@
 ---
 goal: PyTorch DataLoader Tutorial with Pandas / Polars / Daft comparison
-version: "4.0"
+version: "5.0"
 date_created: 2026-03-22
 last_updated: 2026-03-22
 change_log:
+  - date: 2026-03-22
+    version: "5.0"
+    summary: >
+      Colab compatibility fixes: (1) `_setup()` subprocess output now streams via
+      `Popen` + line-by-line `print()` to work around Colab's `sys.stdout` lacking
+      `fileno()`. (2) `num_workers` default uses `min(4, os.cpu_count() or 1)` to
+      avoid oversubscription on low-core Colab VMs. (3) `pre-commit` task in
+      `mise.toml` auto-stages modified `.ipynb` files after `nb:sync`/`nb:stripout`.
   - date: 2026-03-22
     version: "4.0"
     summary: >
@@ -63,11 +71,11 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 - **REQ-004**: The same notebook must run on Colab, local Jupyter (venv), and via `uv run` without modification
 - **REQ-005**: Each notebook must work independently — self-contained setup cell, data download, and device detection
 - **SEC-001**: Kaggle API token (`~/.kaggle/kaggle.json`) must never be committed
-- **CON-001**: Apple Silicon (MPS) must be supported; `num_workers=0` on macOS (via `make_dataloader` helper) to avoid multiprocessing issues on darwin
+- **CON-001**: Apple Silicon (MPS) must be supported; `num_workers=0` on macOS (via `make_dataloader` helper) to avoid multiprocessing issues on darwin; on non-darwin, `num_workers` defaults to `(os.cpu_count() or 2) // 2` to avoid oversubscription on low-core environments (e.g. Colab)
 - **CON-002**: `bert-base-uncased` is ~440 MB; first download latency must be noted
 - **CON-003**: Daft API is evolving rapidly; pin minimum version and note to check latest docs
 - **GUD-001**: Use `nbstripout` via `.gitattributes` to keep `.ipynb` diffs clean
-- **GUD-002**: Use `mise` tasks (`nb:sync`, `lint`, `typecheck`, `pre-commit`) for automation; all tasks defined in root `mise.toml`
+- **GUD-002**: Use `mise` tasks (`nb:sync`, `lint`, `typecheck`, `pre-commit`) for automation; all tasks defined in root `mise.toml`. `pre-commit` task auto-stages modified `.ipynb` files after `nb:sync`/`nb:stripout`
 - **GUD-003**: Use `ruff` for linting and formatting `.py` notebooks; use `ty` for type checking
 - **GUD-004**: `ty` resolves each notebook's third-party imports via its PEP 723 script venv (`uv sync --script` + `uv python find --script`)
 - **GUD-005**: All tool invocations (`jupytext`, `ruff`, `ty`) use `uv run` prefix to ensure correct environment
@@ -304,15 +312,33 @@ def _get_deps():
         return []
     return re.findall(r'#\s+"([^"]+)"', dep_section.group(1))
 
+
+def _run(cmd: list[str]) -> None:
+    """Run a command with streaming output (Colab compatible).
+
+    Colab's sys.stdout lacks fileno(), so passing it directly to
+    subprocess.run(stdout=sys.stdout) raises UnsupportedOperation.
+    Using Popen with PIPE and line-by-line print() works everywhere.
+    """
+    with subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    ) as proc:
+        assert proc.stdout is not None
+        for line in proc.stdout:
+            print(line, end="", flush=True)
+    if proc.returncode:
+        raise subprocess.CalledProcessError(proc.returncode, cmd)
+
+
 def _setup():
     deps = _get_deps()
     try:
         subprocess.run(["uv", "--version"], capture_output=True, check=True)
     except FileNotFoundError:
-        subprocess.run([sys.executable, "-m", "pip", "install", "uv"], check=True)
+        _run([sys.executable, "-m", "pip", "install", "uv"])
 
     flags = [] if sys.prefix != sys.base_prefix else ["--system"]
-    subprocess.run(["uv", "pip", "install"] + flags + deps, check=True)
+    _run(["uv", "pip", "install", *flags, *deps])
 
 _setup()
 ```
