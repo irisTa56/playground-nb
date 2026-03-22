@@ -3,6 +3,14 @@ goal: PyTorch DataLoader Tutorial with Pandas / Polars / Daft comparison
 version: "2.0"
 date_created: 2026-03-22
 last_updated: 2026-03-22
+change_log:
+  - date: 2026-03-22
+    commits: [6ce1c52, 731404e]
+    summary: >
+      Phase 1 tooling setup largely completed. Replaced Makefile with mise tasks.
+      Root pre-commit now delegates to projects/daft/ when staged files are detected.
+      Python 3.12 pinned via .python-version (Colab compatible); requires-python >=3.12.
+      All tool invocations use `uv run` prefix. ty config updated to [tool.ty.environment].
 status: "In progress"
 tags:
   - feature
@@ -37,8 +45,10 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 - **CON-002**: `bert-base-uncased` is ~440 MB; first download latency must be noted
 - **CON-003**: Daft API is evolving rapidly; pin minimum version and note to check latest docs
 - **GUD-001**: Use `nbstripout` via `.gitattributes` to keep `.ipynb` diffs clean
-- **GUD-002**: Provide a `Makefile` target for `.py` → `.ipynb` conversion
+- **GUD-002**: Use `mise` tasks (`nb:sync`, `lint`, `typecheck`, `pre-commit`) for automation instead of `Makefile`
 - **GUD-003**: Use `ruff` for linting and formatting `.py` notebooks; use `ty` for type checking
+- **GUD-004**: Root `mise.toml` pre-commit hook delegates to `projects/daft/mise.toml` when staged files are in `projects/daft/`
+- **GUD-005**: All tool invocations (`jupytext`, `ruff`, `ty`) use `uv run` prefix to ensure correct environment
 - **PAT-001**: PEP 723 inline metadata + runtime `_setup()` pattern (see Appendix)
 
 ## 2. Implementation Steps
@@ -49,15 +59,15 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-001 | Create `projects/daft/mise.toml` pinning `python = "3.12"` and `uv = "latest"` | | |
-| TASK-002 | Create `projects/daft/.gitignore` excluding `data/` | | |
-| TASK-003 | Create `projects/daft/.gitattributes` with `*.ipynb filter=nbstripout` | | |
-| TASK-004 | Create `projects/daft/Makefile` with `%.ipynb: %.py` target using `jupytext --to notebook $<` | | |
-| TASK-005 | Create `projects/daft/pyproject.toml` — minimal project metadata with dev dependencies only (`jupytext`, `nbstripout`, `ipykernel`, `ruff`, `ty`); runtime deps live in each notebook's PEP 723 block | | |
-| TASK-006 | Configure `ruff` in `pyproject.toml`: enable `[tool.ruff]` with `target-version = "py312"`, select rules (`E`, `F`, `I`, `UP`), and `[tool.ruff.format]` for percent-format notebooks. Add `[tool.ruff.per-file-ignores]` with `"notebooks/*.py" = ["E402"]` to allow late imports after the `_setup()` cell | | |
-| TASK-007 | Configure `ty` in `pyproject.toml`: set `[tool.ty.src]` to include `notebooks/` | | |
-| TASK-008 | Add `lint` and `typecheck` targets to `Makefile` (`ruff check --fix .`, `ruff format .`, `ty check`) | | |
-| TASK-009 | Run `uv sync --extra dev` and set up `.venv` with `ipykernel` for local VS Code kernel | | |
+| TASK-001 | Create `projects/daft/mise.toml` with `uv = "latest"` and `.python-version` pinning Python 3.12 (Colab compatible); Python is managed by `uv`, not `mise` | ✅ | 2026-03-22 |
+| TASK-002 | Create `projects/daft/.gitignore` excluding `data/`, `.venv/`, `__pycache__/` | ✅ | 2026-03-22 |
+| TASK-003 | Create `projects/daft/.gitattributes` with `*.ipynb filter=nbstripout` | ✅ | 2026-03-22 |
+| TASK-004 | Create mise tasks in `projects/daft/mise.toml`: `nb:sync` (jupytext conversion), `nb:clean`, `lint`, `typecheck`, `pre-commit` (depends on all three) | ✅ | 2026-03-22 |
+| TASK-005 | Create `projects/daft/pyproject.toml` — minimal project metadata (`requires-python = ">=3.12"`) with dev dependencies only (`jupytext`, `nbstripout`, `ipykernel`, `ruff`, `ty`); runtime deps live in each notebook's PEP 723 block | ✅ | 2026-03-22 |
+| TASK-006 | Configure `ruff` in `pyproject.toml`: `target-version = "py312"`, select rules (`E`, `F`, `I`, `UP`), and `[tool.ruff.lint.per-file-ignores]` with `"notebooks/*.py" = ["E402"]` to allow late imports after the `_setup()` cell | ✅ | 2026-03-22 |
+| TASK-007 | Configure `ty` in `pyproject.toml`: set `[tool.ty.environment]` with `root = ["notebooks/"]` | ✅ | 2026-03-22 |
+| TASK-008 | Add root `mise.toml` pre-commit hook that delegates to `projects/daft/mise run pre-commit` when staged files are in `projects/daft/` | ✅ | 2026-03-22 |
+| TASK-009 | Run `uv sync` and set up `.venv` with `ipykernel` for local VS Code kernel | ✅ | 2026-03-22 |
 | TASK-010 | Verify VS Code detects `.venv` kernel and can run `# %%` cells natively from `.py` files | | |
 
 ### Phase 2 — Setup Notebook (`notebooks/00_setup.py`)
@@ -138,9 +148,9 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
 | TASK-047 | Create `projects/daft/README.md` with setup instructions (local + Colab) | | |
-| TASK-048 | Run `make` to regenerate all `.ipynb` from `.py` | | |
-| TASK-049 | Run `ruff check` and `ruff format --check` on all `.py` notebooks and confirm no violations | | |
-| TASK-050 | Run `ty check` on all `.py` notebooks and resolve any type errors | | |
+| TASK-048 | Run `mise run nb:sync` to regenerate all `.ipynb` from `.py` | | |
+| TASK-049 | Run `mise run lint` (`ruff check --fix` + `ruff format`) on all `.py` notebooks and confirm no violations | | |
+| TASK-050 | Run `mise run typecheck` (`ty check`) on all `.py` notebooks and resolve any type errors | | |
 | TASK-051 | Run all notebooks top-to-bottom locally and confirm no errors | | |
 | TASK-052 | Open each `.ipynb` on Colab via GitHub and confirm the `_setup()` cell installs deps correctly | | |
 
@@ -150,6 +160,7 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 - **ALT-002**: Use only `.ipynb` for git — rejected because `.ipynb` JSON diffs are noisy; `.py` percent format gives clean line-based diffs while `.ipynb` is co-committed (output-stripped) for Colab.
 - **ALT-003**: Use `requirements.txt` per notebook — rejected; PEP 723 block is a single source of truth embedded directly in the code with no extra files to maintain.
 - **ALT-004**: Use `pip` instead of `uv` — rejected because `uv` is significantly faster and the `_setup()` pattern auto-installs `uv` via pip as a fallback when it is not available (e.g., on Colab).
+- **ALT-005**: Use `Makefile` for task automation — rejected in favour of `mise` tasks; `mise.toml` already manages tool versions, adding tasks keeps all project automation in one place with dependency ordering (`depends`, `wait_for`) and avoids requiring `make` on all platforms.
 
 ## 4. Dependencies
 
@@ -177,9 +188,9 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 projects/daft/
 ├── pyproject.toml              # Dev-only deps (jupytext, nbstripout, ipykernel)
 ├── uv.lock
-├── mise.toml                   # Pins Python 3.12 + uv
-├── Makefile                    # %.ipynb: %.py conversion target
-├── .gitignore                  # Excludes data/
+├── mise.toml                   # Pins uv; defines nb:sync, lint, typecheck, pre-commit tasks
+├── .python-version             # Pins Python 3.12 (Colab compatible; managed by uv)
+├── .gitignore                  # Excludes data/, .venv/, __pycache__/
 ├── .gitattributes              # *.ipynb filter=nbstripout
 ├── README.md                   # Setup instructions (local + Colab)
 ├── plan/
@@ -204,7 +215,7 @@ projects/daft/
 ```
 
 - **FILE-001**: `pyproject.toml` — project metadata + dev dependencies only
-- **FILE-002**: `Makefile` — `jupytext` conversion targets
+- **FILE-002**: `mise.toml` — task runner config (`nb:sync`, `nb:clean`, `lint`, `typecheck`, `pre-commit`)
 - **FILE-003**: `.gitattributes` — `nbstripout` filter registration
 - **FILE-004**: `notebooks/00_setup.py` — Environment check + data download
 - **FILE-005**: `notebooks/01_dataloader_basics.py` — DataLoader fundamentals
@@ -214,10 +225,10 @@ projects/daft/
 
 ## 6. Testing
 
-- **TEST-001**: `uv sync --extra dev` completes without errors
+- **TEST-001**: `uv sync` completes without errors
 - **TEST-002**: All packages can be imported in `00_setup` notebook
 - **TEST-003**: Kaggle datasets are correctly extracted under `data/`
-- **TEST-004**: `jupytext --to notebook` generates valid `.ipynb` for every `.py`
+- **TEST-004**: `mise run nb:sync` generates valid `.ipynb` for every `.py`
 - **TEST-005**: `nbstripout` correctly strips outputs from committed `.ipynb` files
 - **TEST-006**: `ruff check` reports no violations on all `.py` notebooks
 - **TEST-007**: `ruff format --check` reports no formatting differences on all `.py` notebooks
