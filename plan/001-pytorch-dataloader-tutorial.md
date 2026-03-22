@@ -49,7 +49,7 @@ tags:
 
 ![Status: In progress](https://img.shields.io/badge/status-In%20progress-yellow)
 
-Implement the content of [`pytorch-dataloader-extended.md`](../docs/pytorch-dataloader-extended.md) as self-contained notebooks under `notebooks/daft/`.
+Implement the content of [`pytorch-dataloader-extended.md`](../docs/daft/pytorch-dataloader-extended.md) as self-contained notebooks under `notebooks/daft/`.
 The goal is to learn how to use PyTorch DataLoader across tabular, text, and image modalities while comparing three libraries: Pandas, Polars, and Daft.
 
 The tutorial is structured as **3 self-contained notebooks**, one per modality (tabular, text, image).
@@ -60,7 +60,7 @@ Notebooks are authored as **`.py` (percent format)** and kept as the single sour
 `.ipynb` files are generated via `jupytext` and co-committed for Colab compatibility.
 Dependencies are declared inline using PEP 723 script metadata and installed at runtime via `uv pip install`.
 
-Code samples for each notebook are defined in the [extended tutorial doc](../docs/pytorch-dataloader-extended.md).
+Code samples for each notebook are defined in the [extended tutorial doc](../docs/daft/pytorch-dataloader-extended.md).
 This plan focuses on the implementation structure, notebook tooling, and task tracking.
 
 ## 1. Requirements & Constraints
@@ -101,7 +101,7 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 
 ### Phase 2 — Tabular Data (`notebooks/daft/pytorch_dataloader_tabular.py`)
 
-- GOAL-002: Self-contained notebook teaching DataLoader fundamentals through a house-price prediction task, comparing Pandas, Polars, and Daft. See [tutorial §1–§2](../docs/pytorch-dataloader-extended.md#1-pytorch-dataloader-fundamentals).
+- GOAL-002: Self-contained notebook teaching DataLoader fundamentals through a house-price prediction task, comparing Pandas, Polars, and Daft. See [tutorial §1–§2](../docs/daft/pytorch-dataloader-extended.md#1-pytorch-dataloader-fundamentals).
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
@@ -124,7 +124,7 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 
 ### Phase 3 — Text Data (`notebooks/daft/pytorch_dataloader_text.py`)
 
-- GOAL-003: Self-contained notebook for IMDB sentiment analysis with BERT tokenization, comparing CSV loading across libraries. See [tutorial §3](../docs/pytorch-dataloader-extended.md#3-text-data-bert--imdb-sentiment-classification).
+- GOAL-003: Self-contained notebook for IMDB sentiment analysis with BERT tokenization, comparing CSV loading across libraries. See [tutorial §3](../docs/daft/pytorch-dataloader-extended.md#3-text-data-bert--imdb-sentiment-classification).
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
@@ -145,7 +145,7 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 
 ### Phase 4 — Image Data (`notebooks/daft/pytorch_dataloader_image.py`)
 
-- GOAL-004: Self-contained notebook for Cat/Dog classification comparing torchvision, Polars metadata, and Daft multimodal pipelines. See [tutorial §4](../docs/pytorch-dataloader-extended.md#4-image-data-where-library-differences-are-most-pronounced).
+- GOAL-004: Self-contained notebook for Cat/Dog classification comparing torchvision, Polars metadata, and Daft multimodal pipelines. See [tutorial §4](../docs/daft/pytorch-dataloader-extended.md#4-image-data-where-library-differences-are-most-pronounced).
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
@@ -223,7 +223,8 @@ playground-nb/
 ├── plan/
 │   └── 001-pytorch-dataloader-tutorial.md
 ├── docs/
-│   └── pytorch-dataloader-extended.md
+│   └── daft/
+│       └── pytorch-dataloader-extended.md
 └── notebooks/
     └── daft/
         ├── pytorch_dataloader_tabular.py      # .py percent format (source of truth)
@@ -270,7 +271,7 @@ playground-nb/
 
 ## 8. Related Specifications / Further Reading
 
-- [`pytorch-dataloader-extended.md`](../docs/pytorch-dataloader-extended.md) — full tutorial with all code samples
+- [`pytorch-dataloader-extended.md`](../docs/daft/pytorch-dataloader-extended.md) — full tutorial with all code samples
 - [PEP 723 — Inline script metadata](https://peps.python.org/pep-0723/)
 - [Jupytext documentation](https://jupytext.readthedocs.io/en/latest/)
 - [nbstripout](https://github.com/kynan/nbstripout)
