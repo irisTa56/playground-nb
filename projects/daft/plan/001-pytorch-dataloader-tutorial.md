@@ -1,10 +1,19 @@
 ---
 goal: PyTorch DataLoader Tutorial with Pandas / Polars / Daft comparison
-version: "2.0"
+version: "3.0"
 date_created: 2026-03-22
 last_updated: 2026-03-22
 change_log:
   - date: 2026-03-22
+    version: "3.0"
+    summary: >
+      Consolidated 5 notebooks (00_setup, 01_basics, 02_tabular, 03_text, 04_image)
+      into 3 self-contained notebooks (pytorch_dataloader_tabular, pytorch_dataloader_text,
+      pytorch_dataloader_image). Each notebook includes its own data download, device
+      detection, and DataLoader fundamentals relevant to that modality.
+      Satisfies REQ-005 strictly.
+  - date: 2026-03-22
+    version: "2.0"
     commits: [6ce1c52, 731404e]
     summary: >
       Phase 1 tooling setup largely completed. Replaced Makefile with mise tasks.
@@ -26,6 +35,10 @@ tags:
 Implement the content of [`pytorch-dataloader-extended.md`](../docs/pytorch-dataloader-extended.md) step-by-step under `projects/daft/`, starting from environment setup.
 The goal is to learn how to use PyTorch DataLoader across tabular, text, and image modalities while comparing three libraries: Pandas, Polars, and Daft.
 
+The tutorial is structured as **3 self-contained notebooks**, one per modality (tabular, text, image).
+Each notebook independently handles dependency installation, data download, device detection, and introduces DataLoader concepts relevant to that modality.
+This means any single notebook can be opened and run without prerequisites.
+
 Notebooks are authored as **`.py` (percent format)** and kept as the single source of truth.
 `.ipynb` files are generated via `jupytext` and co-committed for Colab compatibility.
 Dependencies are declared inline using PEP 723 script metadata and installed at runtime via `uv pip install`.
@@ -39,7 +52,7 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 - **REQ-002**: `.ipynb` must be co-committed so Colab's "Open from GitHub" works
 - **REQ-003**: Dependencies are declared once — in a PEP 723 `# /// script` block at the top of each notebook
 - **REQ-004**: The same notebook must run on Colab, local Jupyter (venv), and via `uv run` without modification
-- **REQ-005**: Each notebook must work independently (self-contained setup cell)
+- **REQ-005**: Each notebook must work independently — self-contained setup cell, data download, and device detection
 - **SEC-001**: Kaggle API token (`~/.kaggle/kaggle.json`) must never be committed
 - **CON-001**: Apple Silicon (MPS) must be supported; `multiprocessing_context="spawn"` required when `num_workers > 0` on macOS
 - **CON-002**: `bert-base-uncased` is ~440 MB; first download latency must be noted
@@ -70,89 +83,78 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 | TASK-009 | Run `uv sync` and set up `.venv` with `ipykernel` for local VS Code kernel | ✅ | 2026-03-22 |
 | TASK-010 | Verify VS Code detects `.venv` kernel and can run `# %%` cells natively from `.py` files | | |
 
-### Phase 2 — Setup Notebook (`notebooks/00_setup.py`)
+### Phase 2 — Tabular Data (`notebooks/pytorch_dataloader_tabular.py`)
 
-- GOAL-002: Create the environment-check and data-download notebook with the PEP 723 setup cell pattern.
+- GOAL-002: Self-contained notebook teaching DataLoader fundamentals through a house-price prediction task, comparing Pandas, Polars, and Daft. See [tutorial §1–§2](../docs/pytorch-dataloader-extended.md#1-pytorch-dataloader-fundamentals).
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-011 | Write PEP 723 header cell with all runtime dependencies and `_setup()` bootstrap function | | |
-| TASK-012 | Environment verification cell: print Python version and all package versions | | |
+| TASK-011 | PEP 723 header cell with `torch`, `pandas`, `polars`, `getdaft`, `scikit-learn`, `matplotlib`, `kaggle` and `_setup()` | | |
+| TASK-012 | Environment verification cell: print Python version and key package versions | | |
 | TASK-013 | Device detection cell (`get_device()` returning `cuda` / `mps` / `cpu`) | | |
-| TASK-014 | Dataset download cells via Kaggle CLI with existence checks (Housing, IMDB, Cat/Dog) | | |
-| TASK-015 | Directory structure verification cell after download | | |
-| TASK-016 | Generate `.ipynb` with `jupytext --to notebook notebooks/00_setup.py` and verify on Colab | | |
+| TASK-014 | Housing dataset download via Kaggle CLI with existence check and manual download URL fallback | | |
+| TASK-015 | Explain `Dataset` ↔ `DataLoader` relationship in Markdown cells | | |
+| TASK-016 | Minimal `TensorDataset` + `DataLoader` example as warm-up | | |
+| TASK-017 | Walk through core parameters: `batch_size`, `shuffle`, `num_workers`, `pin_memory`, `collate_fn` (overview only; deep-dive in text notebook) | | |
+| TASK-018 | macOS note: `multiprocessing_context="spawn"` helper (`make_dataloader`) | | |
+| TASK-019 | Pandas preprocessing (§2.1): `read_csv` → encoding → `StandardScaler` → `train_test_split` → `.to_numpy()` | | |
+| TASK-020 | Polars preprocessing (§2.2): `read_csv` → expression-based encoding → `.to_numpy()` (Arrow zero-copy) | | |
+| TASK-021 | Polars Lazy API (§2.2): `scan_csv` → predicate pushdown / projection pushdown demo | | |
+| TASK-022 | Daft preprocessing (§2.3): `read_csv` → UDF → `.collect()` → tensor conversion | | |
+| TASK-023 | Shared `HousePriceDataset(Dataset)` class (§2.4) | | |
+| TASK-024 | Lightweight training loop (few epochs, `nn.Linear`) to verify end-to-end | | |
+| TASK-025 | Comparison table Markdown cell (§2.5) | | |
+| TASK-026 | Generate `.ipynb` and validate | | |
 
-### Phase 3 — DataLoader Fundamentals (`notebooks/01_dataloader_basics.py`)
+### Phase 3 — Text Data (`notebooks/pytorch_dataloader_text.py`)
 
-- GOAL-003: Teach `Dataset` / `DataLoader` concepts with minimal examples. See [tutorial §1](../docs/pytorch-dataloader-extended.md#1-pytorch-dataloader-fundamentals).
-
-| Task | Description | Completed | Date |
-|------|-------------|-----------|------|
-| TASK-017 | PEP 723 header cell with `torch` dependency and `_setup()` | | |
-| TASK-018 | Explain `Dataset` ↔ `DataLoader` relationship in Markdown cells | | |
-| TASK-019 | Minimal `TensorDataset` + `DataLoader` example | | |
-| TASK-020 | Walk through parameters: `batch_size`, `shuffle`, `num_workers`, `pin_memory`, `collate_fn` | | |
-| TASK-021 | macOS note: `multiprocessing_context="spawn"` helper (`make_dataloader`) | | |
-| TASK-022 | Generate `.ipynb` and validate | | |
-
-### Phase 4 — Tabular Data (`notebooks/02_tabular.py`)
-
-- GOAL-004: Compare Pandas, Polars, and Daft for tabular preprocessing → DataLoader pipeline. See [tutorial §2](../docs/pytorch-dataloader-extended.md#2-tabular-data-where-the-choice-of-preprocessing-library-matters-most).
+- GOAL-003: Self-contained notebook for IMDB sentiment analysis with BERT tokenization, comparing CSV loading across libraries. See [tutorial §3](../docs/pytorch-dataloader-extended.md#3-text-data-bert--imdb-sentiment-classification).
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-023 | PEP 723 header cell with `torch`, `pandas`, `polars`, `getdaft`, `scikit-learn`, `matplotlib` | | |
-| TASK-024 | Pandas preprocessing (§2.1): `read_csv` → encoding → `StandardScaler` → `train_test_split` → `.to_numpy()` | | |
-| TASK-025 | Polars preprocessing (§2.2): `read_csv` → expression-based encoding → `.to_numpy()` (Arrow zero-copy) | | |
-| TASK-026 | Polars Lazy API (§2.2): `scan_csv` → predicate pushdown / projection pushdown demo | | |
-| TASK-027 | Daft preprocessing (§2.3): `read_csv` → UDF → `.collect()` → tensor conversion | | |
-| TASK-028 | Shared `HousePriceDataset(Dataset)` class (§2.4) | | |
-| TASK-029 | Lightweight training loop (few epochs, `nn.Linear`) to verify end-to-end | | |
-| TASK-030 | Comparison table Markdown cell (§2.5) | | |
-| TASK-031 | Generate `.ipynb` and validate | | |
+| TASK-027 | PEP 723 header cell with `torch`, `pandas`, `polars`, `getdaft`, `transformers`, `kaggle` and `_setup()` | | |
+| TASK-028 | Environment verification cell: print Python version and key package versions | | |
+| TASK-029 | Device detection cell (`get_device()`) | | |
+| TASK-030 | IMDB dataset download via Kaggle CLI with existence check and manual download URL fallback | | |
+| TASK-031 | Introduce `collate_fn` for variable-length sequences — the DataLoader concept most relevant to text | | |
+| TASK-032 | CSV loading comparison (§3.1): `%%time` across Pandas, Polars, Daft | | |
+| TASK-033 | Tokenisation example (§3.2): `BertTokenizer.from_pretrained("bert-base-uncased")` | | |
+| TASK-034 | `IMDBDataset(Dataset)` class (§3.2) returning `input_ids`, `attention_mask`, `label` | | |
+| TASK-035 | DataLoader config: `batch_size=16`, `num_workers`, `pin_memory` | | |
+| TASK-036 | Batch verification: print tensor shapes | | |
+| TASK-037 | Generate `.ipynb` and validate | | |
 
-### Phase 5 — Text Data (`notebooks/03_text.py`)
+### Phase 4 — Image Data (`notebooks/pytorch_dataloader_image.py`)
 
-- GOAL-005: IMDB sentiment analysis with BERT tokenization, comparing CSV loading across libraries. See [tutorial §3](../docs/pytorch-dataloader-extended.md#3-text-data-bert--imdb-sentiment-classification).
-
-| Task | Description | Completed | Date |
-|------|-------------|-----------|------|
-| TASK-032 | PEP 723 header cell with `torch`, `pandas`, `polars`, `getdaft`, `transformers` | | |
-| TASK-033 | CSV loading comparison (§3.1): `%%time` across Pandas, Polars, Daft | | |
-| TASK-034 | Tokenisation example (§3.2): `BertTokenizer.from_pretrained("bert-base-uncased")` | | |
-| TASK-035 | `IMDBDataset(Dataset)` class (§3.2) returning `input_ids`, `attention_mask`, `label` | | |
-| TASK-036 | DataLoader config: `batch_size=16`, `num_workers`, `pin_memory` | | |
-| TASK-037 | Batch verification: print tensor shapes | | |
-| TASK-038 | Generate `.ipynb` and validate | | |
-
-### Phase 6 — Image Data (`notebooks/04_image.py`)
-
-- GOAL-006: Cat/Dog classification comparing torchvision, Polars metadata, and Daft multimodal pipelines. See [tutorial §4](../docs/pytorch-dataloader-extended.md#4-image-data-where-library-differences-are-most-pronounced).
+- GOAL-004: Self-contained notebook for Cat/Dog classification comparing torchvision, Polars metadata, and Daft multimodal pipelines. See [tutorial §4](../docs/pytorch-dataloader-extended.md#4-image-data-where-library-differences-are-most-pronounced).
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-039 | PEP 723 header cell with `torch`, `torchvision`, `polars`, `getdaft`, `Pillow`, `matplotlib` | | |
-| TASK-040 | torchvision approach (§4.1): `transforms.v2.Compose` → `ImageFolder` → `DataLoader` | | |
-| TASK-041 | Batch visualisation with matplotlib | | |
-| TASK-042 | Polars metadata management (§4.2): scan dirs → DataFrame of paths + labels → custom `Dataset` | | |
-| TASK-043 | Daft multimodal pipeline (§4.3): `from_glob_path` → label extraction → `url.download()` → `decode_image()` | | |
-| TASK-044 | Daft → `IterableDataset` → `DataLoader` (§4.4) | | |
-| TASK-045 | Comparison table Markdown cell (§4.5) | | |
-| TASK-046 | Generate `.ipynb` and validate | | |
+| TASK-038 | PEP 723 header cell with `torch`, `torchvision`, `polars`, `getdaft`, `Pillow`, `matplotlib`, `kaggle` and `_setup()` | | |
+| TASK-039 | Environment verification cell: print Python version and key package versions | | |
+| TASK-040 | Device detection cell (`get_device()`) | | |
+| TASK-041 | Cat/Dog dataset download via Kaggle CLI with existence check and manual download URL fallback | | |
+| TASK-042 | Introduce `num_workers` and `pin_memory` tuning — the DataLoader concepts most relevant to image I/O | | |
+| TASK-043 | torchvision approach (§4.1): `transforms.v2.Compose` → `ImageFolder` → `DataLoader` | | |
+| TASK-044 | Batch visualisation with matplotlib | | |
+| TASK-045 | Polars metadata management (§4.2): scan dirs → DataFrame of paths + labels → custom `Dataset` | | |
+| TASK-046 | Daft multimodal pipeline (§4.3): `from_glob_path` → label extraction → `url.download()` → `decode_image()` | | |
+| TASK-047 | Daft → `IterableDataset` → `DataLoader` (§4.4) | | |
+| TASK-048 | Comparison table Markdown cell (§4.5) | | |
+| TASK-049 | Generate `.ipynb` and validate | | |
 
-### Phase 7 — Finalisation
+### Phase 5 — Finalisation
 
-- GOAL-007: Documentation, full validation, and Colab smoke test.
+- GOAL-005: Documentation, full validation, and Colab smoke test.
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-047 | Create `projects/daft/README.md` with setup instructions (local + Colab) | | |
-| TASK-048 | Run `mise run nb:sync` to regenerate all `.ipynb` from `.py` | | |
-| TASK-049 | Run `mise run lint` (`ruff check --fix` + `ruff format`) on all `.py` notebooks and confirm no violations | | |
-| TASK-050 | Run `mise run typecheck` (`ty check`) on all `.py` notebooks and resolve any type errors | | |
-| TASK-051 | Run all notebooks top-to-bottom locally and confirm no errors | | |
-| TASK-052 | Open each `.ipynb` on Colab via GitHub and confirm the `_setup()` cell installs deps correctly | | |
+| TASK-050 | Create `projects/daft/README.md` with setup instructions (local + Colab) | | |
+| TASK-051 | Run `mise run nb:sync` to regenerate all `.ipynb` from `.py` | | |
+| TASK-052 | Run `mise run lint` (`ruff check --fix` + `ruff format`) on all `.py` notebooks and confirm no violations | | |
+| TASK-053 | Run `mise run typecheck` (`ty check`) on all `.py` notebooks and resolve any type errors | | |
+| TASK-054 | Run all notebooks top-to-bottom locally and confirm no errors | | |
+| TASK-055 | Open each `.ipynb` on Colab via GitHub and confirm the `_setup()` cell installs deps correctly | | |
 
 ## 3. Alternatives
 
@@ -161,6 +163,7 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 - **ALT-003**: Use `requirements.txt` per notebook — rejected; PEP 723 block is a single source of truth embedded directly in the code with no extra files to maintain.
 - **ALT-004**: Use `pip` instead of `uv` — rejected because `uv` is significantly faster and the `_setup()` pattern auto-installs `uv` via pip as a fallback when it is not available (e.g., on Colab).
 - **ALT-005**: Use `Makefile` for task automation — rejected in favour of `mise` tasks; `mise.toml` already manages tool versions, adding tasks keeps all project automation in one place with dependency ordering (`depends`, `wait_for`) and avoids requiring `make` on all platforms.
+- **ALT-006**: Separate setup notebook (`00_setup`) and basics notebook (`01_dataloader_basics`) — rejected because it violates REQ-005 (each notebook must work independently). Data download and DataLoader fundamentals are instead embedded into each modality notebook so any single notebook can be opened and run without prerequisites.
 
 ## 4. Dependencies
 
@@ -202,38 +205,32 @@ projects/daft/
 │   ├── imdb/
 │   └── cats_and_dogs/
 └── notebooks/
-    ├── 00_setup.py             # .py percent format (source of truth)
-    ├── 00_setup.ipynb          # Generated; output-stripped
-    ├── 01_dataloader_basics.py
-    ├── 01_dataloader_basics.ipynb
-    ├── 02_tabular.py
-    ├── 02_tabular.ipynb
-    ├── 03_text.py
-    ├── 03_text.ipynb
-    ├── 04_image.py
-    └── 04_image.ipynb
+    ├── pytorch_dataloader_tabular.py      # .py percent format (source of truth)
+    ├── pytorch_dataloader_tabular.ipynb   # Generated; output-stripped
+    ├── pytorch_dataloader_text.py
+    ├── pytorch_dataloader_text.ipynb
+    ├── pytorch_dataloader_image.py
+    └── pytorch_dataloader_image.ipynb
 ```
 
 - **FILE-001**: `pyproject.toml` — project metadata + dev dependencies only
 - **FILE-002**: `mise.toml` — task runner config (`nb:sync`, `nb:clean`, `lint`, `typecheck`, `pre-commit`)
 - **FILE-003**: `.gitattributes` — `nbstripout` filter registration
-- **FILE-004**: `notebooks/00_setup.py` — Environment check + data download
-- **FILE-005**: `notebooks/01_dataloader_basics.py` — DataLoader fundamentals
-- **FILE-006**: `notebooks/02_tabular.py` — Tabular: Pandas vs Polars vs Daft
-- **FILE-007**: `notebooks/03_text.py` — Text: IMDB + BERT
-- **FILE-008**: `notebooks/04_image.py` — Image: Cat/Dog classification
+- **FILE-004**: `notebooks/pytorch_dataloader_tabular.py` — Tabular: DataLoader fundamentals + Pandas vs Polars vs Daft
+- **FILE-005**: `notebooks/pytorch_dataloader_text.py` — Text: IMDB + BERT + collate_fn
+- **FILE-006**: `notebooks/pytorch_dataloader_image.py` — Image: Cat/Dog + num_workers/pin_memory tuning
 
 ## 6. Testing
 
 - **TEST-001**: `uv sync` completes without errors
-- **TEST-002**: All packages can be imported in `00_setup` notebook
-- **TEST-003**: Kaggle datasets are correctly extracted under `data/`
+- **TEST-002**: Each notebook's `_setup()` cell installs all its dependencies from scratch
+- **TEST-003**: Each notebook downloads its dataset via Kaggle CLI when `data/` is empty
 - **TEST-004**: `mise run nb:sync` generates valid `.ipynb` for every `.py`
 - **TEST-005**: `nbstripout` correctly strips outputs from committed `.ipynb` files
 - **TEST-006**: `ruff check` reports no violations on all `.py` notebooks
 - **TEST-007**: `ruff format --check` reports no formatting differences on all `.py` notebooks
 - **TEST-008**: `ty check` reports no type errors on all `.py` notebooks
-- **TEST-009**: Notebooks `01` through `04` run top-to-bottom locally without errors
+- **TEST-009**: Each notebook runs top-to-bottom locally without errors (independently, in any order)
 - **TEST-010**: Each `DataLoader` yields batches with expected tensor shapes
 - **TEST-011**: `_setup()` cell installs dependencies correctly on Colab (no pre-existing venv)
 - **TEST-012**: `_setup()` cell works in local venv (no `--system` flag)
@@ -244,6 +241,7 @@ projects/daft/
 - **RISK-001**: Daft API may change between versions — pin minimum version and note in notebooks to check latest docs
 - **RISK-002**: `nbstripout` filter must be installed per-clone; if missing, outputs will leak into diffs
 - **RISK-003**: PEP 723 parsing in `_setup()` relies on regex; malformed metadata blocks will silently fail — mitigate by printing a warning when no dependencies are found (`if not deps: print("Warning: no PEP 723 dependencies found — check the # /// script block")`)
+- **RISK-004**: `_setup()`, `get_device()`, and Kaggle download logic are duplicated across all 3 notebooks to satisfy REQ-005. Changes to the shared pattern must be applied to every notebook — mitigate by keeping the boilerplate minimal and identical so a simple search-and-replace suffices
 - **ASSUMPTION-001**: Users have a Kaggle account and `~/.kaggle/kaggle.json` configured. Notebooks should provide a manual download URL as a fallback for users without Kaggle API access
 - **ASSUMPTION-002**: `uv` is either pre-installed or can be installed via `pip install uv` (Colab fallback)
 - **ASSUMPTION-003**: Colab provides `get_ipython()` and `In[n]` in the user namespace
