@@ -357,16 +357,32 @@ df_daft = df_daft.with_columns(
     {c: col(c).contains("yes").cast(DataType.int8()) for c in binary_cols}
 )
 
-furnishing_map_daft = {"furnished": 2, "semi-furnished": 1, "unfurnished": 0}
-df_daft = df_daft.with_column(
-    "furnishingstatus",
-    col("furnishingstatus").apply(
-        lambda x: furnishing_map_daft[x], return_dtype=DataType.int8()
-    ),
+# Multi-class: boolean arithmetic avoids Python UDF (Daft 0.7 lacks if_else)
+# furnished → 2, semi-furnished → 1, unfurnished → 0
+is_furnished = col("furnishingstatus").eq_null_safe("furnished").cast(DataType.int8())
+is_semi_furnished = (
+    col("furnishingstatus").eq_null_safe("semi-furnished").cast(DataType.int8())
+)
+is_unfurnished = (
+    col("furnishingstatus").eq_null_safe("unfurnished").cast(DataType.int8())
+)
+
+df_daft = df_daft.with_columns(
+    {
+        "furnishingstatus": is_furnished * 2 + is_semi_furnished,
+        "_matched": is_furnished + is_semi_furnished + is_unfurnished,
+    }
 )
 
 # Lazy execution: trigger with .collect()
 df_daft = df_daft.collect()
+
+# Every row must match exactly one category; 0 means unknown value
+assert df_daft.agg(col("_matched").min()).to_pydict()["_matched"][0] == 1, (
+    "Unknown furnishingstatus values found"
+)
+df_daft = df_daft.exclude("_matched").collect()  # Drop helper column after validation
+
 print(f"Daft — rows: {len(df_daft)}")
 df_daft.to_pandas().head()
 
