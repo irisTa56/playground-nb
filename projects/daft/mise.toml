@@ -4,7 +4,7 @@ uv = "latest"
 
 [tasks.pre-commit]
 description = "Pre-commit checks for daft project"
-depends = ["nb:sync", "lint", "typecheck"]
+depends = ["nb:sync", "nb:stripout", "lint", "typecheck"]
 
 [tasks."nb:sync"]
 description = "Generate .ipynb from all .py notebooks"
@@ -12,6 +12,16 @@ run = """
 shopt -s nullglob
 for f in notebooks/*.py; do
   uv run jupytext --to notebook "$f"
+done
+"""
+
+[tasks."nb:stripout"]
+description = "Strip output from all .ipynb notebooks"
+wait_for = ["nb:sync"]
+run = """
+shopt -s nullglob
+for f in notebooks/*.ipynb; do
+  uv run nbstripout "$f"
 done
 """
 
