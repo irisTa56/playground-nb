@@ -350,6 +350,9 @@ df_lazy.head()
 import daft
 from daft import DataType, col
 
+# Suppress Daft's tqdm progress bar (e.g. "Read CSV: 50,000 rows out")
+os.environ["DAFT_PROGRESS_BAR"] = "0"
+
 df_daft = daft.read_csv(str(CSV_PATH))
 
 # Expression-based binary encoding (no Python loops over rows)

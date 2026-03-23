@@ -128,20 +128,20 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-027 | PEP 723 header cell with `torch`, `pandas`, `polars`, `getdaft`, `transformers`, `kaggle` and `_setup()` | | |
-| TASK-028 | Environment verification cell: print Python version and key package versions | | |
-| TASK-029 | Device detection cell (`get_device()`) | | |
-| TASK-030 | IMDB dataset download via Kaggle CLI with existence check and manual download URL fallback | | |
-| TASK-031 | `make_dataloader` helper with `num_workers=0` on darwin + `pin_memory` for CUDA (self-contained, REQ-005) | | |
-| TASK-032 | Introduce `collate_fn` for variable-length sequences — the DataLoader concept most relevant to text | | |
-| TASK-033 | CSV loading comparison (§3.1): `%%time` across Pandas, Polars, Daft | | |
-| TASK-034 | Tokenisation example (§3.2): `BertTokenizer.from_pretrained("bert-base-uncased")` | | |
-| TASK-035 | `IMDBDataset(Dataset)` class (§3.2) returning `input_ids`, `attention_mask`, `label` | | |
-| TASK-036 | DataLoader config: `batch_size=16`, `num_workers`, `pin_memory` | | |
-| TASK-037 | Batch verification: print tensor shapes | | |
-| TASK-038 | Lightweight training + evaluation loop (few epochs, sentiment classification) to verify end-to-end | | |
-| TASK-039 | Comparison table Markdown cell: CSV loading time, tokenisation approach, and library characteristics | | |
-| TASK-040 | Generate `.ipynb` and validate | | |
+| TASK-027 | PEP 723 header cell with `torch`, `pandas`, `polars`, `getdaft`, `transformers`, `kaggle` and `_setup()` | ✅ | 2026-03-23 |
+| TASK-028 | Environment verification cell: print Python version and key package versions | ✅ | 2026-03-23 |
+| TASK-029 | Device detection cell (`get_device()`) | ✅ | 2026-03-23 |
+| TASK-030 | IMDB dataset download via Kaggle CLI with existence check and manual download URL fallback | ✅ | 2026-03-23 |
+| TASK-031 | `make_dataloader` helper with `num_workers=0` on darwin + `pin_memory` for CUDA (self-contained, REQ-005) | ✅ | 2026-03-23 |
+| TASK-032 | Introduce `collate_fn` for variable-length sequences — the DataLoader concept most relevant to text | ✅ | 2026-03-23 |
+| TASK-033 | CSV loading comparison (§3.1): `%%time` across Pandas, Polars, Daft | ✅ | 2026-03-23 |
+| TASK-034 | Tokenisation example (§3.2): `BertTokenizer.from_pretrained("bert-base-uncased")` | ✅ | 2026-03-23 |
+| TASK-035 | `IMDBDataset(Dataset)` class (§3.2) returning `input_ids`, `attention_mask`, `label` | ✅ | 2026-03-23 |
+| TASK-036 | DataLoader config: `batch_size=16`, `num_workers`, `pin_memory` | ✅ | 2026-03-23 |
+| TASK-037 | Batch verification: print tensor shapes | ✅ | 2026-03-23 |
+| TASK-038 | Lightweight training + evaluation loop (few epochs, sentiment classification) to verify end-to-end | ✅ | 2026-03-23 |
+| TASK-039 | Comparison table Markdown cell: CSV loading time, tokenisation approach, and library characteristics | ✅ | 2026-03-23 |
+| TASK-040 | Generate `.ipynb` and validate | ✅ | 2026-03-23 |
 
 ### Phase 4 — Image Data (`notebooks/daft/pytorch_dataloader_image.py`)
 
