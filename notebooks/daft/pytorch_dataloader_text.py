@@ -243,48 +243,54 @@ def collate_imdb(
 
 # %%
 import timeit
+from collections.abc import Callable
 
-import pandas as pd
+
+def bench[T](fn: Callable[[], T], n: int = 3) -> tuple[T, float]:
+    """Run *fn* **n** times and return ``(last_result, avg_seconds)``."""
+    result: T | None = None
+    total = 0.0
+    for _ in range(n):
+        t0 = timeit.default_timer()
+        result = fn()
+        total += timeit.default_timer() - t0
+    assert result is not None
+    return result, total / n
+
 
 # %%
-t_pd = timeit.timeit(
-    lambda: pd.read_csv(CSV_PATH)[["review", "sentiment"]].dropna(), number=3
-)
-df_pd = pd.read_csv(CSV_PATH)[["review", "sentiment"]].dropna()
-print(f"Pandas  — {len(df_pd):,} rows, {t_pd / 3:.3f}s avg")
+import pandas as pd
+
+df_pd, t_pd = bench(lambda: pd.read_csv(CSV_PATH)[["review", "sentiment"]].dropna())
+print(f"Pandas  — {len(df_pd):,} rows, {t_pd:.3f}s avg")
 df_pd.head()
 
 # %%
 import polars as pl
 
-t_pl = timeit.timeit(
-    lambda: pl.read_csv(CSV_PATH).select(["review", "sentiment"]).drop_nulls(), number=3
+df_pl, t_pl = bench(
+    lambda: pl.read_csv(CSV_PATH).select(["review", "sentiment"]).drop_nulls()
 )
-df_pl = pl.read_csv(CSV_PATH).select(["review", "sentiment"]).drop_nulls()
-print(f"Polars  — {len(df_pl):,} rows, {t_pl / 3:.3f}s avg")
+print(f"Polars  — {len(df_pl):,} rows, {t_pl:.3f}s avg")
 df_pl.head()
 
 # %%
-import os
-
 import daft
 
 # Suppress Daft's tqdm progress bar (e.g. "Read CSV: 50,000 rows out")
 os.environ["DAFT_PROGRESS_BAR"] = "0"
 
-t_daft = timeit.timeit(
-    lambda: daft.read_csv(str(CSV_PATH)).select("review", "sentiment").collect(),
-    number=3,
+df_daft, t_daft = bench(
+    lambda: daft.read_csv(str(CSV_PATH)).select("review", "sentiment").collect()
 )
-df_daft = daft.read_csv(str(CSV_PATH)).select("review", "sentiment").collect()
-print(f"Daft    — {len(df_daft):,} rows, {t_daft / 3:.3f}s avg")
+print(f"Daft    — {len(df_daft):,} rows, {t_daft:.3f}s avg")
 df_daft.to_pandas().head()
 
 # %%
 print("\n--- CSV Loading Time Summary ---")
-print(f"  Pandas:  {t_pd / 3:.3f}s")
-print(f"  Polars:  {t_pl / 3:.3f}s")
-print(f"  Daft:    {t_daft / 3:.3f}s")
+print(f"  Pandas:  {t_pd:.3f}s")
+print(f"  Polars:  {t_pl:.3f}s")
+print(f"  Daft:    {t_daft:.3f}s")
 
 # %% [markdown]
 # ---
@@ -457,6 +463,7 @@ class SentimentClassifier(nn.Module):
 
 
 def train_and_evaluate(
+    model: SentimentClassifier,
     texts_train: list[str],
     texts_test: list[str],
     labels_train: list[int],
@@ -489,7 +496,10 @@ def train_and_evaluate(
         test_ds, batch_size=batch_size, shuffle=False, collate_fn=collate_imdb
     )
 
-    model = SentimentClassifier().to(DEVICE)
+    # Reset the classifier head so each run starts from scratch
+    nn.init.xavier_uniform_(model.classifier.weight)
+    nn.init.zeros_(model.classifier.bias)
+    model.to(DEVICE)
     optimizer = torch.optim.Adam(model.classifier.parameters(), lr=lr)
     criterion = nn.BCEWithLogitsLoss()
 
@@ -536,7 +546,10 @@ def train_and_evaluate(
 
 
 # %%
-# Warmup: absorb one-time costs (BERT loading, MPS shader compilation, etc.)
+# Instantiate once — BERT weights are loaded only here.
+model = SentimentClassifier().to(DEVICE)
+
+# Warmup: absorb one-time costs (MPS shader compilation, etc.)
 _warmup_texts, _warmup_labels = next(iter(backends.values()))
 _wt_tr, _wt_te, _wl_tr, _wl_te = train_test_split(
     _warmup_texts,
@@ -545,7 +558,7 @@ _wt_tr, _wt_te, _wl_tr, _wl_te = train_test_split(
     random_state=42,
     stratify=_warmup_labels,
 )
-_ = train_and_evaluate(_wt_tr, _wt_te, _wl_tr, _wl_te)
+_ = train_and_evaluate(model, _wt_tr, _wt_te, _wl_tr, _wl_te)
 print("Warmup done.\n")
 
 results: dict[str, dict[str, float]] = {}
@@ -554,7 +567,7 @@ for name, (txts, lbls) in backends.items():
         txts, lbls, test_size=0.2, random_state=42, stratify=lbls
     )
     t0 = timeit.default_timer()
-    metrics = train_and_evaluate(t_tr, t_te, l_tr, l_te)
+    metrics = train_and_evaluate(model, t_tr, t_te, l_tr, l_te)
     elapsed = timeit.default_timer() - t0
     results[name] = {**metrics, "time_sec": elapsed}
     print(
@@ -578,7 +591,7 @@ results_df
 
 # %% [markdown]
 # ---
-# ## 8. Comparison
+# ## 9. Comparison
 #
 # ### CSV Loading Time
 #
