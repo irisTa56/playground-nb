@@ -51,5 +51,6 @@ mise generate git-pre-commit --write --task=pre-commit
 ## Conventions
 
 - Notebooks should be self-contained: install their own deps, download data, and detect accelerators.
+- The PEP 723 setup cell (`_get_deps`, `_run`, `_setup`) is **identical across all notebooks**. When modifying it, apply the same change to every notebook. Use `/create-notebook` to scaffold new notebooks with the correct boilerplate.
 - Use `extend-select` (not `select`) when adding ruff lint rules.
 - Python version is pinned in mise.toml `[tools]`. Pass it to uv via `uv venv --python "$(mise which python)"`; do not pin Python separately in uv config.
