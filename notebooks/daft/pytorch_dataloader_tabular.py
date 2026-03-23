@@ -31,7 +31,6 @@
 #   "polars>=1.39",
 #   "getdaft>=0.5",
 #   "scikit-learn>=1.8",
-#   "matplotlib>=3.10",
 #   "kaggle>=2.0",
 #   "numpy>=2.4",
 #   "ipywidgets>=8.1",
