@@ -286,12 +286,6 @@ df_daft, t_daft = bench(
 print(f"Daft    — {len(df_daft):,} rows, {t_daft:.3f}s avg")
 df_daft.to_pandas().head()
 
-# %%
-print("\n--- CSV Loading Time Summary ---")
-print(f"  Pandas:  {t_pd:.3f}s")
-print(f"  Polars:  {t_pl:.3f}s")
-print(f"  Daft:    {t_daft:.3f}s")
-
 # %% [markdown]
 # ---
 # ## 4. Tokenisation with BERT
@@ -324,11 +318,9 @@ print(
 # longest sequence, which is more efficient than padding every sample to
 # `max_length`.
 
+
 # %%
-from torch.utils.data import Dataset as TorchDataset
-
-
-class IMDBDataset(TorchDataset):
+class IMDBDataset(Dataset):
     """Map-style dataset for IMDB sentiment classification."""
 
     def __init__(
@@ -603,9 +595,6 @@ results_df
 #
 # ### Key Observations
 #
-# - **The tokenizer dominates preprocessing time.** Unlike tabular data where
-#   encoding and scaling take measurable time, here the BERT tokenizer in
-#   `__getitem__` is the bottleneck. The CSV loading library matters less.
 # - **Library choice matters for large-scale loading.** For CSVs of several
 #   hundred MB or more, Polars' Rust parser substantially outperforms Pandas.
 #   Daft shines when reading sharded files from S3/GCS.

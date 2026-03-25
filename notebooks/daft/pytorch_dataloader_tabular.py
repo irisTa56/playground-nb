@@ -264,7 +264,7 @@ def split_and_scale(
 
 
 df_pd = pd.read_csv(CSV_PATH)
-print(f"Pandas shape: {df_pd.shape}")
+print(f"Pandas — {df_pd.shape[0]:,} rows × {df_pd.shape[1]} cols")
 df_pd.head()
 
 # %%
@@ -303,7 +303,7 @@ print(f"Pandas — train: {X_train_pd_np.shape}, test: {X_test_pd_np.shape}")
 import polars as pl
 
 df_pl = pl.read_csv(CSV_PATH)
-print(f"Polars shape: {df_pl.shape}")
+print(f"Polars — {df_pl.shape[0]:,} rows × {df_pl.shape[1]} cols")
 
 # Binary columns: vectorised replace + cast
 df_pl = df_pl.with_columns(
@@ -384,7 +384,7 @@ data = df_daft.to_pydict()
 assert min(data.pop("_matched")) == 1, "Unknown furnishingstatus values found"
 df_daft = daft.from_pydict(data).collect()  # type: ignore[arg-type]
 
-print(f"Daft — rows: {len(df_daft)}")
+print(f"Daft — {len(df_daft):,} rows × {len(df_daft.column_names)} cols")
 df_daft.to_pandas().head()
 
 # %%
@@ -408,11 +408,9 @@ print(f"Daft — train: {X_daft_train.shape}, test: {X_daft_test.shape}")
 # This confirms that the preprocessing backend is interchangeable — the
 # DataLoader sees the same tensors regardless of how they were prepared.
 
+
 # %%
-from torch.utils.data import Dataset as TorchDataset
-
-
-class HousePriceDataset(TorchDataset):
+class HousePriceDataset(Dataset):
     """Map-style dataset for house-price regression."""
 
     def __init__(self, features: np.ndarray, labels: np.ndarray) -> None:
