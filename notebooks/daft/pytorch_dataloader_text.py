@@ -29,7 +29,7 @@
 #   "torch>=2.10",
 #   "pandas>=3.0",
 #   "polars>=1.39",
-#   "getdaft>=0.5",
+#   "daft>=0.7",
 #   "transformers>=4.40",
 #   "scikit-learn>=1.8",
 #   "kaggle>=2.0",

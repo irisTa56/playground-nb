@@ -29,7 +29,7 @@
 #   "torch>=2.10",
 #   "torchvision>=0.22",
 #   "polars>=1.39",
-#   "getdaft>=0.5",
+#   "daft>=0.7",
 #   "Pillow>=10.0",
 #   "matplotlib>=3.10",
 #   "kaggle>=2.0",
