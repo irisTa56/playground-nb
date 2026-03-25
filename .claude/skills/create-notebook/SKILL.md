@@ -62,6 +62,7 @@ import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 
 def _get_deps():
@@ -69,7 +70,7 @@ def _get_deps():
         ip = get_ipython()  # type: ignore[name-defined]
         src = ip.user_ns.get("In", [""])[ip.execution_count]
     except (NameError, IndexError):
-        src = open(__file__).read()
+        src = Path(__file__).read_text()
 
     m = re.search(r"# /// script\s*\n(.*?)# ///", src, re.DOTALL)
     if not m:
