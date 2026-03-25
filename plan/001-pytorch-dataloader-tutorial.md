@@ -149,20 +149,20 @@ This plan focuses on the implementation structure, notebook tooling, and task tr
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-041 | PEP 723 header cell with `torch`, `torchvision`, `polars`, `getdaft`, `Pillow`, `matplotlib`, `kaggle` and `_setup()` | | |
-| TASK-042 | Environment verification cell: print Python version and key package versions | | |
-| TASK-043 | Device detection cell (`get_device()`) | | |
-| TASK-044 | Cat/Dog dataset download via Kaggle CLI with existence check and manual download URL fallback | | |
-| TASK-045 | `make_dataloader` helper with `num_workers=0` on darwin + `pin_memory` for CUDA (self-contained, REQ-005) | | |
-| TASK-046 | Introduce `num_workers` and `pin_memory` tuning — the DataLoader concepts most relevant to image I/O | | |
-| TASK-047 | torchvision approach (§4.1): `transforms.v2.Compose` → `ImageFolder` → `DataLoader` | | |
-| TASK-048 | Batch visualisation with matplotlib | | |
-| TASK-049 | Polars metadata management (§4.2): scan dirs → DataFrame of paths + labels → custom `Dataset` | | |
-| TASK-050 | Daft multimodal pipeline (§4.3): `from_glob_path` → label extraction → `url.download()` → `decode_image()` | | |
-| TASK-051 | Daft → `IterableDataset` → `DataLoader` (§4.4) | | |
-| TASK-052 | Lightweight training + evaluation loop (few epochs, image classification) to verify end-to-end | | |
-| TASK-053 | Comparison table Markdown cell (§4.5) | | |
-| TASK-054 | Generate `.ipynb` and validate | | |
+| TASK-041 | PEP 723 header cell with `torch`, `torchvision`, `polars`, `getdaft`, `Pillow`, `matplotlib`, `kaggle` and `_setup()` | ✅ | 2026-03-25 |
+| TASK-042 | Environment verification cell: print Python version and key package versions | ✅ | 2026-03-25 |
+| TASK-043 | Device detection cell (`get_device()`) | ✅ | 2026-03-25 |
+| TASK-044 | Cat/Dog dataset download via Kaggle CLI with existence check and manual download URL fallback | ✅ | 2026-03-25 |
+| TASK-045 | `make_dataloader` helper with `num_workers=0` on darwin + `pin_memory` for CUDA (self-contained, REQ-005) | ✅ | 2026-03-25 |
+| TASK-046 | Introduce `num_workers` and `pin_memory` tuning — the DataLoader concepts most relevant to image I/O | ✅ | 2026-03-25 |
+| TASK-047 | torchvision approach (§4.1): `transforms.v2.Compose` → `ImageFolder` → `DataLoader` | ✅ | 2026-03-25 |
+| TASK-048 | Batch visualisation with matplotlib | ✅ | 2026-03-25 |
+| TASK-049 | Polars metadata management (§4.2): scan dirs → DataFrame of paths + labels → custom `Dataset` | ✅ | 2026-03-25 |
+| TASK-050 | Daft multimodal pipeline (§4.3): `from_glob_path` → label extraction → `url.download()` → `decode_image()` | ✅ | 2026-03-25 |
+| TASK-051 | Daft → `IterableDataset` → `DataLoader` (§4.4) | ✅ | 2026-03-25 |
+| TASK-052 | Lightweight training + evaluation loop (few epochs, image classification) to verify end-to-end | ✅ | 2026-03-25 |
+| TASK-053 | Comparison table Markdown cell (§4.5) | ✅ | 2026-03-25 |
+| TASK-054 | Generate `.ipynb` and validate | ✅ | 2026-03-25 |
 
 ### Phase 5 — Finalisation
 

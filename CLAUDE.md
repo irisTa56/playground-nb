@@ -48,6 +48,10 @@ mise generate git-pre-commit --write --task=pre-commit
 - Each notebook uses **PEP 723 inline script metadata** (`# /// script`) to declare its own dependencies. Type checking runs `uv sync --script` per file to create isolated venvs.
 - Notebook `.py` files have `E402` (module-level import order) suppressed in ruff config since cells naturally have interspersed imports.
 
+## Pre-commit
+
+Before finishing a task that modifies files, run `mise run pre-commit` and fix all errors. Do not consider the task complete until pre-commit passes cleanly.
+
 ## Conventions
 
 - Notebooks should be self-contained: install their own deps, download data, and detect accelerators.

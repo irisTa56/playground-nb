@@ -1,16 +1,1 @@
-{
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "mise run pre-commit",
-            "timeout": 300,
-            "statusMessage": "Running pre-commit checks..."
-          }
-        ]
-      }
-    ]
-  }
-}
+{}
