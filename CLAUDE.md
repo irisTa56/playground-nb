@@ -58,3 +58,12 @@ Before finishing a task that modifies files, run `mise run pre-commit` and fix a
 - The PEP 723 setup cell (`_get_deps`, `_run`, `_setup`) is **identical across all notebooks**. When modifying it, apply the same change to every notebook. Use `/create-notebook` to scaffold new notebooks with the correct boilerplate.
 - Use `extend-select` (not `select`) when adding ruff lint rules.
 - Python version is pinned in mise.toml `[tools]`. Pass it to uv via `uv venv --python "$(mise which python)"`; do not pin Python separately in uv config.
+
+## Notebook Code Quality
+
+When writing or reviewing notebook code, enforce these rules:
+
+- **No redundant imports.** Don't re-import or alias a symbol already in scope. If an earlier cell imports `Dataset`, later cells must use that name — not `from ... import Dataset as TorchDataset`.
+- **Consistent print output across approaches.** When a notebook compares multiple approaches (e.g., Pandas / Polars / Daft), each section must display the **same types of information** in the **same format**. Unify content (row counts, batch shapes, etc.), wording, and prefix style.
+- **No redundant content.** Summary/comparison sections at the end should add insight, not restate what earlier sections already showed. If section 2 explains `num_workers`, the final comparison section must not repeat it.
+- **No unused variables.** Remove variables that are created but never referenced. In particular, watch for demo datasets or loaders created "for symmetry" but never consumed downstream.
