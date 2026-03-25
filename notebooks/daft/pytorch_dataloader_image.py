@@ -228,18 +228,18 @@ transform = T.Compose(
 train_dataset_tv = datasets.ImageFolder(TRAIN_DIR, transform=transform)
 test_dataset_tv = datasets.ImageFolder(TEST_DIR, transform=transform)
 
-print(f"Classes: {train_dataset_tv.classes}")
-print(f"Class→idx: {train_dataset_tv.class_to_idx}")
-print(f"Train: {len(train_dataset_tv):,}  Test: {len(test_dataset_tv):,}")
+# ImageFolder assigns labels alphabetically: cats=0, dogs=1.
+# All other approaches use the same mapping via `"dogs" in path`.
+assert train_dataset_tv.class_to_idx == {"cats": 0, "dogs": 1}
+
+print(f"[torchvision] classes: {train_dataset_tv.class_to_idx}")
+print(f"[torchvision] train: {len(train_dataset_tv):,}  test: {len(test_dataset_tv):,}")
 
 # %%
 train_loader_tv = make_dataloader(train_dataset_tv, batch_size=32, shuffle=True)
-test_loader_tv = make_dataloader(test_dataset_tv, batch_size=32, shuffle=False)
 
 images, labels = next(iter(train_loader_tv))
-print(f"Batch images shape: {images.shape}")  # [32, 3, 224, 224]
-print(f"Batch labels shape: {labels.shape}")  # [32]
-print(f"Label distribution: {labels.sum().item():.0f} dogs / {len(labels)} total")
+print(f"[torchvision] batch: images {images.shape}, labels {labels.shape}")
 
 # %% [markdown]
 # ### Batch Visualisation
@@ -281,7 +281,8 @@ show_batch(images, labels, train_dataset_tv.classes)
 # %%
 import polars as pl
 
-# Build a metadata DataFrame with expression-based label extraction
+# Build a metadata DataFrame with expression-based label extraction.
+# Label logic: "dogs" in path → 1, else 0 (same as torchvision ImageFolder).
 meta_train = pl.DataFrame(
     {"path": [str(p) for p in TRAIN_DIR.rglob("*.jpg")]}
 ).with_columns(pl.col("path").str.contains("dogs").cast(pl.Int8).alias("label"))
@@ -290,18 +291,14 @@ meta_test = pl.DataFrame(
     {"path": [str(p) for p in TEST_DIR.rglob("*.jpg")]}
 ).with_columns(pl.col("path").str.contains("dogs").cast(pl.Int8).alias("label"))
 
-print(f"Train metadata: {len(meta_train):,} rows")
-print(
-    f"  cats: {len(meta_train) - meta_train['label'].sum()}, dogs: {meta_train['label'].sum()}"
-)
+print(f"[Polars] train: {len(meta_train):,}  test: {len(meta_test):,}")
 meta_train.head()
 
 # %%
 from PIL import Image
-from torch.utils.data import Dataset as TorchDataset
 
 
-class ImagePathDataset(TorchDataset):
+class ImagePathDataset(Dataset):
     """Map-style dataset that loads images from file paths."""
 
     def __init__(self, paths: list[str], labels: list[int], transform=None) -> None:
@@ -324,19 +321,10 @@ train_dataset_pl = ImagePathDataset(
     meta_train["label"].to_list(),
     transform=transform,
 )
-test_dataset_pl = ImagePathDataset(
-    meta_test["path"].to_list(),
-    meta_test["label"].to_list(),
-    transform=transform,
-)
+train_loader_pl = make_dataloader(train_dataset_pl, batch_size=32, shuffle=True)
 
-print(
-    f"Polars datasets — Train: {len(train_dataset_pl):,}  Test: {len(test_dataset_pl):,}"
-)
-
-# Verify a sample
-img, label = train_dataset_pl[0]
-print(f"Sample shape: {img.shape}, label: {label}")
+images, labels = next(iter(train_loader_pl))
+print(f"[Polars] batch: images {images.shape}, labels {labels.shape}")
 
 # %% [markdown]
 # ---
@@ -356,14 +344,15 @@ os.environ["DAFT_PROGRESS_BAR"] = "0"
 
 train_df = daft.from_glob_path(str(TRAIN_DIR / "*" / "*.jpg"))
 
-# Expression-based label extraction (no Python loop over rows)
+# Expression-based label extraction (no Python loop over rows).
+# Label logic: "dogs" in path → 1, else 0 (same as torchvision ImageFolder).
 train_df = train_df.with_column(
     "label",
     col("path").contains("dogs").cast(DataType.int8()),
 )
 
 train_df_collected = train_df.select("path", "label").collect()
-print(f"Daft train DataFrame: {len(train_df_collected):,} rows")
+print(f"[Daft] train: {len(train_df_collected):,}")
 train_df_collected.to_pandas().head()
 
 # %%
@@ -373,7 +362,7 @@ test_df = test_df.with_column(
     col("path").contains("dogs").cast(DataType.int8()),
 )
 test_df_collected = test_df.select("path", "label").collect()
-print(f"Daft test DataFrame: {len(test_df_collected):,} rows")
+print(f"[Daft] test: {len(test_df_collected):,}")
 
 # %% [markdown]
 # ### Daft → `IterableDataset` → `DataLoader`
@@ -402,26 +391,23 @@ class DaftPathStream(IterableDataset):
 
 
 train_dataset_daft = DaftPathStream(train_df, transform=transform)
-test_dataset_daft = DaftPathStream(test_df, transform=transform)
 
 # IterableDataset does not support shuffle — Daft handles row ordering internally
 train_loader_daft = make_dataloader(train_dataset_daft, batch_size=32, shuffle=False)
 
-# Verify a batch
-batch_imgs, batch_lbls = next(iter(train_loader_daft))
-print(f"Daft batch images: {batch_imgs.shape}, labels: {batch_lbls.shape}")
+images, labels = next(iter(train_loader_daft))
+print(f"[Daft] batch: images {images.shape}, labels {labels.shape}")
 
 # %% [markdown]
 # ---
 # ## 6. Training & Evaluation
 #
 # A lightweight CNN classifier trained for a few epochs on a small subset to
-# verify the end-to-end pipeline. We compare torchvision `ImageFolder` and
-# the Polars metadata approach (both are map-style Datasets).
-#
-# > **Note:** The Daft `IterableDataset` approach is also valid but is skipped
-# > in the timed comparison since `IterableDataset` does not support `len()`,
-# > making epoch-based training less straightforward.
+# verify the end-to-end pipeline. All three approaches — torchvision
+# `ImageFolder`, Polars metadata, and Daft multimodal — are compared on the
+# **same random subset** of images. Note that Daft uses `IterableDataset`
+# (`shuffle=False`), while the other two use map-style Datasets with
+# `shuffle=True`.
 
 # %%
 import timeit
@@ -515,32 +501,80 @@ def train_and_evaluate(
 # %%
 import pandas as pd
 
-# Use a subset for faster training
+# Use a random subset of paths for faster training.
+# All approaches receive the **same** images so the comparison is fair.
 MAX_TRAIN = 2000
 MAX_TEST = 500
 
-# Subset via torch.utils.data.Subset
-from torch.utils.data import Subset
-
 torch.manual_seed(42)
-train_indices = torch.randperm(len(train_dataset_tv))[:MAX_TRAIN].tolist()
-test_indices = torch.randperm(len(test_dataset_tv))[:MAX_TEST].tolist()
+all_train_paths = sorted(str(p) for p in TRAIN_DIR.rglob("*.jpg"))
+all_test_paths = sorted(str(p) for p in TEST_DIR.rglob("*.jpg"))
+train_paths_sub = [
+    all_train_paths[i]
+    for i in torch.randperm(len(all_train_paths))[:MAX_TRAIN].tolist()
+]
+test_paths_sub = [
+    all_test_paths[i] for i in torch.randperm(len(all_test_paths))[:MAX_TEST].tolist()
+]
+
+
+def _label_from_path(p: str) -> int:
+    return int("dogs" in p)
+
+
+def _make_path_dataset(paths: list[str], transform):
+    return ImagePathDataset(paths, [_label_from_path(p) for p in paths], transform)
+
+
+def _make_polars_dataset(meta: pl.DataFrame, paths: list[str], transform):
+    # Join preserves the order of *paths* so all approaches iterate identically.
+    ordered = pl.DataFrame({"path": paths}).join(meta, on="path", how="inner")
+    return ImagePathDataset(
+        ordered["path"].to_list(), ordered["label"].to_list(), transform
+    )
+
+
+def _make_daft_stream(daft_df: daft.DataFrame, paths: list[str], transform):
+    # Daft's from_glob_path prefixes paths with "file://"
+    uri_paths = [f"file://{p}" for p in paths]
+    return DaftPathStream(
+        daft_df.filter(col("path").is_in(daft.Series.from_pylist(uri_paths))),
+        transform=transform,
+    )
+
 
 approaches: dict[str, tuple[DataLoader, DataLoader]] = {
     "torchvision": (
         make_dataloader(
-            Subset(train_dataset_tv, train_indices), batch_size=32, shuffle=True
+            _make_path_dataset(train_paths_sub, transform), batch_size=32, shuffle=True
         ),
         make_dataloader(
-            Subset(test_dataset_tv, test_indices), batch_size=32, shuffle=False
+            _make_path_dataset(test_paths_sub, transform), batch_size=32, shuffle=False
         ),
     ),
     "Polars": (
         make_dataloader(
-            Subset(train_dataset_pl, train_indices), batch_size=32, shuffle=True
+            _make_polars_dataset(meta_train, train_paths_sub, transform),
+            batch_size=32,
+            shuffle=True,
         ),
         make_dataloader(
-            Subset(test_dataset_pl, test_indices), batch_size=32, shuffle=False
+            _make_polars_dataset(meta_test, test_paths_sub, transform),
+            batch_size=32,
+            shuffle=False,
+        ),
+    ),
+    # IterableDataset does not support shuffle; Daft controls row order internally.
+    "Daft": (
+        make_dataloader(
+            _make_daft_stream(train_df, train_paths_sub, transform),
+            batch_size=32,
+            shuffle=False,
+        ),
+        make_dataloader(
+            _make_daft_stream(test_df, test_paths_sub, transform),
+            batch_size=32,
+            shuffle=False,
         ),
     ),
 }
@@ -565,9 +599,9 @@ for name, (tr_loader, te_loader) in approaches.items():
     )
 
 # %% [markdown]
-# Both approaches produce comparable results — the `ImageFolder` and Polars
-# metadata pipelines feed the **same images and labels** to the DataLoader.
-# The difference is in how paths and labels are discovered and managed.
+# All three approaches produce comparable results — they feed the **same
+# images and labels** to the DataLoader. The difference is in how paths and
+# labels are discovered and managed.
 
 # %%
 results_df = pd.DataFrame(results).T
@@ -589,12 +623,6 @@ results_df
 #
 # ### Key Observations
 #
-# - **`num_workers` matters most for images.** Image decoding is CPU-bound;
-#   parallel workers prevent the GPU from starving. This is the DataLoader
-#   concept most relevant to image pipelines.
-# - **`pin_memory` speeds up CUDA transfers.** Page-locked host memory enables
-#   async DMA copies to the GPU, which is especially impactful for large
-#   image batches.
 # - **torchvision `ImageFolder` is the simplest approach.** For local datasets
 #   with a directory-per-class structure, it requires minimal code.
 # - **Polars excels at metadata management.** When you need to join labels from
