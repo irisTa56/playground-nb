@@ -129,7 +129,7 @@ if not CSV_PATH.exists():
                 "-d",
                 "lakshmi25npathi/imdb-dataset-of-50k-movie-reviews",
                 "-p",
-                str(DATA_DIR),
+                DATA_DIR,
                 "--unzip",
             ],
             check=True,

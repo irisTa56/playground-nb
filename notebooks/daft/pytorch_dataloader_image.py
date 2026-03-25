@@ -131,7 +131,7 @@ if not TRAIN_DIR.exists():
                 "-d",
                 "tongpython/cat-and-dog",
                 "-p",
-                str(DATA_DIR),
+                DATA_DIR,
                 "--unzip",
             ],
             check=True,
@@ -225,8 +225,8 @@ transform = T.Compose(
     ]
 )
 
-train_dataset_tv = datasets.ImageFolder(str(TRAIN_DIR), transform=transform)
-test_dataset_tv = datasets.ImageFolder(str(TEST_DIR), transform=transform)
+train_dataset_tv = datasets.ImageFolder(TRAIN_DIR, transform=transform)
+test_dataset_tv = datasets.ImageFolder(TEST_DIR, transform=transform)
 
 print(f"Classes: {train_dataset_tv.classes}")
 print(f"Class→idx: {train_dataset_tv.class_to_idx}")

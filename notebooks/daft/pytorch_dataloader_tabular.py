@@ -128,7 +128,7 @@ if not CSV_PATH.exists():
                 "-d",
                 "yasserh/housing-prices-dataset",
                 "-p",
-                str(DATA_DIR),
+                DATA_DIR,
                 "--unzip",
             ],
             check=True,
