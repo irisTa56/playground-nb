@@ -56,6 +56,7 @@ Before finishing a task that modifies files, run `mise run pre-commit` and fix a
 
 - Notebooks should be self-contained: install their own deps, download data, and detect accelerators.
 - The PEP 723 setup cell (`_get_deps`, `_run`, `_setup`) is **identical across all notebooks**. When modifying it, apply the same change to every notebook. Use `/create-notebook` to scaffold new notebooks with the correct boilerplate.
+- **Dependency version pins**: When adding or updating PEP 723 dependencies, look up the latest stable release on PyPI and pin the minimum to that minor version (e.g., `torch>=2.11`, not `torch>=2.0`). This keeps notebooks on modern APIs and avoids silent compatibility issues with older versions.
 - Use `extend-select` (not `select`) when adding ruff lint rules.
 - Python version is pinned in mise.toml `[tools]`. Pass it to uv via `uv venv --python "$(mise which python)"`; do not pin Python separately in uv config.
 
