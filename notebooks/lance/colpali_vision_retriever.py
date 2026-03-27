@@ -24,6 +24,8 @@
 # **Codebase** — <https://github.com/AyushExel/vision-retrieval>
 # (based on <https://github.com/kyryl-opens-ml/vision-retrieval>)
 #
+# **Reference** — <https://lancedb.com/blog/late-interaction-efficient-multi-modal-retrievers-need-more-than-just-a-vector-index/>
+#
 # ColPali is a visual retriever model that combines:
 #
 # * **PaliGemma** — a VLM with SigLIP-So400m/14 vision encoder + Gemma-2B
