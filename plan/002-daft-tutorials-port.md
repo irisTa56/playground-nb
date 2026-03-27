@@ -1,9 +1,14 @@
 ---
 goal: Port 4 Daft tutorial notebooks (minhash dedup, embeddings, text-to-image, image color query) into this repo
-version: "1.2"
+version: "1.3"
 date_created: 2026-03-27
 last_updated: 2026-03-27
 change_log:
+  - date: 2026-03-27
+    version: "1.3"
+    summary: >
+      Phase 1 complete. Add PAT-009 (source tutorial link), record confirmed
+      Daft 0.7 API changes in RISK-004, mark Phase 1 tasks done.
   - date: 2026-03-27
     version: "1.2"
     summary: >
@@ -14,7 +19,7 @@ change_log:
       Address review findings: fix LSH params, specify S3 buckets, correct UDF
       API patterns, add display/testing/error-handling policies.
 owner: takayuki
-status: Planned
+status: In Progress
 tags:
   - feature
   - daft
@@ -23,7 +28,7 @@ tags:
 
 # Introduction
 
-![Status: Planned](https://img.shields.io/badge/status-Planned-blue)
+![Status: In Progress](https://img.shields.io/badge/status-In%20Progress-yellow)
 
 Port four Daft tutorial notebooks from [Eventual-Inc/Daft tutorials](https://github.com/Eventual-Inc/Daft/tree/main/tutorials) into this repository, adapting them to the existing notebook style (Jupytext percent format, PEP 723 inline metadata, self-contained setup boilerplate).
 
@@ -68,9 +73,9 @@ Each phase covers one notebook end-to-end: scaffold, implement content, and pass
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-001 | Create `notebooks/daft/image_color_query.py` with YAML front matter, Colab badge, PEP 723 block (deps: `daft[aws]>=0.7`, `numpy>=2.4`, `Pillow>=12.1`, `ipywidgets>=8.1`), and identical `_get_deps`/`_run`/`_setup` boilerplate. No Ray dependency — use Daft native runner. | | |
-| TASK-002 | Implement content — (1) version print (no device detection — CPU only), (2) config constants (`TOP_N=10`, red hue range in HSV), (3) load OpenImages validation images from `s3://daft-public-data/open-images/validation-images/*` with `S3Config(anonymous=True)` (Daft's public mirror — no region override needed), (4) image download via `.apply()` + `urllib.request`, (5) HSV color analysis via `.apply()` + PIL/numpy to compute red-pixel ratio, (6) sort by redness score and take top-N, (7) display results via Daft's built-in Image column rendering (`df.show()` / `df.collect()`), (8) summary markdown | | |
-| TASK-003 | Run `mise run pre-commit` — fix any lint/typecheck/sync issues until clean | | |
+| TASK-001 | Create `notebooks/daft/image_color_query.py` with YAML front matter, Colab badge, PEP 723 block (deps: `daft[aws]>=0.7`, `numpy>=2.4`, `Pillow>=12.1`, `ipywidgets>=8.1`), and identical `_get_deps`/`_run`/`_setup` boilerplate. No Ray dependency — use Daft native runner. | ✅ | 2026-03-27 |
+| TASK-002 | Implement content — (1) version print (no device detection — CPU only), (2) config constants (`TOP_N=10`, red hue range in HSV), (3) load OpenImages validation images from `s3://daft-public-data/open-images/validation-images/*` with `S3Config(anonymous=True)` (Daft's public mirror — no region override needed), (4) image download via `.download()`, decode via `.decode_image()`, (5) HSV color analysis via `.apply()` + PIL/numpy to compute red-pixel ratio (Daft passes `numpy.ndarray` to `.apply()` — use `Image.fromarray()`), (6) sort by redness score and take top-N, (7) display results via Daft's built-in Image column rendering (`df.show()` / `df.collect()`), (8) summary markdown with source tutorial link (PAT-009) | ✅ | 2026-03-27 |
+| TASK-003 | Run `mise run pre-commit` — fix any lint/typecheck/sync issues until clean | ✅ | 2026-03-27 |
 
 ### Phase 2: MinHash Deduplication (`minhash_dedup_common_crawl.py`)
 
