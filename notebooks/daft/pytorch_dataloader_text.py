@@ -38,7 +38,6 @@
 # ]
 # ///
 
-import os
 import re
 import subprocess
 import sys
@@ -159,6 +158,8 @@ print(f"Dataset ready: {CSV_PATH}  ({CSV_PATH.stat().st_size:,} bytes)")
 # variable-length tokenised sequences are dynamically padded per batch.
 
 # %%
+import os
+
 from torch.utils.data import DataLoader, Dataset
 
 

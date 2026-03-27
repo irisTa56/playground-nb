@@ -37,7 +37,6 @@
 # ]
 # ///
 
-import os
 import re
 import subprocess
 import sys
@@ -191,6 +190,8 @@ print(f"Batch labels  shape: {batch[1].shape}")  # [16, 1]
 # | `persistent_workers` | Keep workers alive between epochs | `True` to amortise spawn cost |
 
 # %%
+import os
+
 from torch.utils.data import Dataset
 
 

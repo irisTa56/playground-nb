@@ -58,7 +58,6 @@ A `# %% [markdown]` cell with:
 # ]
 # ///
 
-import os
 import re
 import subprocess
 import sys

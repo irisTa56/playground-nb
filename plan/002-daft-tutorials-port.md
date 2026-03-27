@@ -1,9 +1,14 @@
 ---
 goal: Port 4 Daft tutorial notebooks (minhash dedup, embeddings, text-to-image, image color query) into this repo
-version: "1.3"
+version: "1.4"
 date_created: 2026-03-27
 last_updated: 2026-03-27
 change_log:
+  - date: 2026-03-27
+    version: "1.4"
+    summary: >
+      Phase 5 complete. Moved `import os` out of setup cell in 3 existing
+      notebooks, updated CLAUDE.md and `/create-notebook` skill boilerplate.
   - date: 2026-03-27
     version: "1.3"
     summary: >
@@ -113,8 +118,8 @@ Each phase covers one notebook end-to-end: scaffold, implement content, and pass
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-013 | In `pytorch_dataloader_tabular.py`, `pytorch_dataloader_text.py`, `pytorch_dataloader_image.py`: move `import os` from the setup cell to the cell where `os` is first used (e.g., `os.environ["DAFT_PROGRESS_BAR"]` or `os.cpu_count()`). Run `mise run pre-commit` to verify. | | |
-| TASK-014 | Update CLAUDE.md boilerplate description and `/create-notebook` skill to clarify that the setup cell imports are limited to `re`, `subprocess`, `sys`, `Path`. Notebook-specific stdlib imports like `os` go in the cell where they are first needed. | | |
+| TASK-013 | In `pytorch_dataloader_tabular.py`, `pytorch_dataloader_text.py`, `pytorch_dataloader_image.py`: move `import os` from the setup cell to the cell where `os` is first used (e.g., `os.environ["DAFT_PROGRESS_BAR"]` or `os.cpu_count()`). Run `mise run pre-commit` to verify. | ✅ | 2026-03-27 |
+| TASK-014 | Update CLAUDE.md boilerplate description and `/create-notebook` skill to clarify that the setup cell imports are limited to `re`, `subprocess`, `sys`, `Path`. Notebook-specific stdlib imports like `os` go in the cell where they are first needed. | ✅ | 2026-03-27 |
 
 ## 3. Alternatives
 

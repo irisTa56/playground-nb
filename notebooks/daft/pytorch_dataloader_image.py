@@ -39,7 +39,6 @@
 # ]
 # ///
 
-import os
 import re
 import subprocess
 import sys
@@ -160,6 +159,8 @@ print(f"Dataset ready: {n_train:,} train / {n_test:,} test images")
 # decoding and augmentation are CPU-bound.
 
 # %%
+import os
+
 from torch.utils.data import DataLoader, Dataset
 
 
