@@ -50,7 +50,7 @@ change_log:
       Address review findings: fix LSH params, specify S3 buckets, correct UDF
       API patterns, add display/testing/error-handling policies.
 owner: takayuki
-status: In Progress
+status: Done
 tags:
   - feature
   - daft
@@ -59,7 +59,7 @@ tags:
 
 # Introduction
 
-![Status: In Progress](https://img.shields.io/badge/status-In%20Progress-yellow)
+![Status: Done](https://img.shields.io/badge/status-Done-brightgreen)
 
 Port four Daft tutorial notebooks from [Eventual-Inc/Daft tutorials](https://github.com/Eventual-Inc/Daft/tree/main/tutorials) into this repository, adapting them to the existing notebook style (Jupytext percent format, PEP 723 inline metadata, self-contained setup boilerplate).
 
