@@ -5,6 +5,14 @@ date_created: 2026-03-27
 last_updated: 2026-03-27
 change_log:
   - date: 2026-03-27
+    version: "1.8"
+    summary: >
+      Phase 4 complete. Implemented text_to_image_generation.py with
+      StableDiffusionPipeline, get_device() with CPU warning, @daft.func UDF
+      for row-wise generation, IPython.display for PIL images, and .length()
+      (Daft 0.7 accessor-free API). Added RISK-004 note: .str.length() →
+      .length() (string accessor namespace removed).
+  - date: 2026-03-27
     version: "1.7"
     summary: >
       Phase 3 complete. Implemented embeddings_stackexchange.py with
@@ -126,9 +134,9 @@ Each phase covers one notebook end-to-end: scaffold, implement content, and pass
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-010 | Create `notebooks/daft/text_to_image_generation.py` with boilerplate and PEP 723 block (deps: `daft[aws]>=0.7`, `transformers>=5.3`, `diffusers>=0.37`, `torch>=2.11`, `accelerate>=1.13`, `Pillow>=12.1`, `ipywidgets>=8.1`). Use stable `daft>=0.7`, not nightly. | | |
-| TASK-011 | Implement content — (1) version print + `get_device()` with explicit CPU warning for Stable Diffusion, (2) config (`NUM_IMAGES=3`, `MODEL_ID="runwayml/stable-diffusion-v1-5"`), (3) load parquet from S3 (url, description, aesthetic_score), filter top-scoring prompts, (4) `StableDiffusionPipeline` setup with dtype per device (`float16` on CUDA, `float32` otherwise), (5) generation via `.apply()` (pipeline is initialized once outside the UDF; do not use `@daft.udf` or `num_gpus`), (6) execute and collect results, (7) display generated images via `IPython.display.display()` + PIL (images are outside Daft DataFrame at this point), (8) summary markdown with model download size warning (~4GB) | | |
-| TASK-012 | Run `mise run pre-commit` — fix any lint/typecheck/sync issues until clean | | |
+| TASK-010 | Create `notebooks/daft/text_to_image_generation.py` with boilerplate and PEP 723 block (deps: `daft[aws]>=0.7`, `transformers>=4.51`, `diffusers>=0.33`, `torch>=2.11`, `accelerate>=1.13`, `Pillow>=12.1`, `ipywidgets>=8.1`). Use stable `daft>=0.7`, not nightly. | ✅ | 2026-03-27 |
+| TASK-011 | Implement content — (1) version print + `get_device()` with explicit CPU warning for Stable Diffusion, (2) config (`NUM_IMAGES=3`, `MODEL_ID="runwayml/stable-diffusion-v1-5"`), (3) load parquet from S3 (url, description, aesthetic_score), filter top-scoring prompts, (4) `StableDiffusionPipeline` setup with dtype per device (`float16` on CUDA, `float32` otherwise), (5) generation via `@daft.func` (pipeline is initialized once outside the UDF; do not use `@daft.udf` or `num_gpus`), (6) execute and collect results, (7) display generated images via `IPython.display.display()` + PIL (images are outside Daft DataFrame at this point), (8) summary markdown with model download size warning (~4GB) | ✅ | 2026-03-27 |
+| TASK-012 | Run `mise run pre-commit` — fix any lint/typecheck/sync issues until clean | ✅ | 2026-03-27 |
 
 ### Phase 5: Boilerplate Cleanup (`import os` separation)
 
@@ -201,7 +209,7 @@ Each phase covers one notebook end-to-end: scaffold, implement content, and pass
 - **RISK-001**: S3 anonymous access may require correct `region_name` per bucket — Common Crawl is `us-east-1`. OpenImages data uses Daft's public mirror (`s3://daft-public-data`) which works with default region (no override needed). Mitigation: test each S3 config during implementation.
 - **RISK-002**: `selectolax` may lack wheels for some platforms (e.g., older macOS ARM). Mitigation: it has good wheel coverage as of 2025; if issues arise, fall back to `beautifulsoup4`.
 - **RISK-003**: Stable Diffusion model download is ~4GB — notebook 4 needs a warning cell about download size and time.
-- **RISK-004**: Daft `@daft.func()` and `.apply()` APIs may evolve between releases. Mitigation: pin `>=0.7` and test against current stable. Note: `@daft.udf` (batch/class-based) and `num_gpus` are not used. **Confirmed in Phase 1**: (1) `.url.download()` → `.download()`, `.image.decode()` → `.decode_image()` (accessor namespaces removed), (2) `.apply()` on Image columns passes `numpy.ndarray` (RGB), not `PIL.Image` — use `Image.fromarray()` to convert. **Confirmed in Phase 3**: (3) `.struct.get("field")` → `.get("field")` (struct accessor namespace removed), (4) `@daft.udf` deprecated in 0.7, use `@daft.func` (row-wise) or `@daft.cls` (stateful batch) instead.
+- **RISK-004**: Daft `@daft.func()` and `.apply()` APIs may evolve between releases. Mitigation: pin `>=0.7` and test against current stable. Note: `@daft.udf` (batch/class-based) and `num_gpus` are not used. **Confirmed in Phase 1**: (1) `.url.download()` → `.download()`, `.image.decode()` → `.decode_image()` (accessor namespaces removed), (2) `.apply()` on Image columns passes `numpy.ndarray` (RGB), not `PIL.Image` — use `Image.fromarray()` to convert. **Confirmed in Phase 3**: (3) `.struct.get("field")` → `.get("field")` (struct accessor namespace removed), (4) `@daft.udf` deprecated in 0.7, use `@daft.func` (row-wise) or `@daft.cls` (stateful batch) instead. **Confirmed in Phase 4**: (5) `.str.length()` → `.length()` (string accessor namespace removed).
 - **RISK-005**: `igraph>=1.0` is a major version bump from the 0.x series — API changes are possible (e.g., function renames). Mitigation: verify `Graph.connected_components()` API against 1.0 docs during implementation. C extension compilation risk remains; pre-built wheels cover most platforms. Verify Colab compatibility during TEST-006.
 - **RISK-006**: `daft[aws]` extras pull in `boto3`, which may cause version conflicts with other packages in the PEP 723 venv. Mitigation: PEP 723 venvs are isolated per notebook, so conflicts are limited to each notebook's own dependency set.
 - **RISK-007**: `transformers>=5.3` and `sentence-transformers>=5.3` are major version bumps from the source tutorials (which used 4.x and 3.x respectively). Mitigation: verify `StableDiffusionPipeline` and `SentenceTransformer` APIs against current docs during implementation. Pin exact major if breaking changes are found.
