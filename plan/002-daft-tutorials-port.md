@@ -1,9 +1,15 @@
 ---
 goal: Port 4 Daft tutorial notebooks (minhash dedup, embeddings, text-to-image, image color query) into this repo
-version: "1.6"
+version: "1.7"
 date_created: 2026-03-27
 last_updated: 2026-03-27
 change_log:
+  - date: 2026-03-27
+    version: "1.7"
+    summary: >
+      Phase 3 complete. Implemented embeddings_stackexchange.py with
+      SentenceTransformer encoding, struct field extraction, semantic
+      similarity search via semantic_search(), and get_device() GPU detection.
   - date: 2026-03-27
     version: "1.6"
     summary: >
@@ -110,9 +116,9 @@ Each phase covers one notebook end-to-end: scaffold, implement content, and pass
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-007 | Create `notebooks/daft/embeddings_stackexchange.py` with boilerplate and PEP 723 block (deps: `daft[aws]>=0.7`, `sentence-transformers>=5.3`, `torch>=2.11`, `accelerate>=1.13`, `ipywidgets>=8.1`) | | |
-| TASK-008 | Implement content — (1) version print + `get_device()` detection, (2) config (`MAX_ROWS=10_000`, `MODEL_NAME="all-MiniLM-L6-v2"`), (3) load RedPajama StackExchange parquet from S3 with anonymous access, (4) embedding via `.apply()` with `SentenceTransformer` moved to detected device (model initialized once outside the UDF), (5) compute embeddings on question text, (6) semantic search with `cos_sim()` for a sample query, (7) display top-K results with similarity scores, (8) summary markdown | | |
-| TASK-009 | Run `mise run pre-commit` — fix any lint/typecheck/sync issues until clean | | |
+| TASK-007 | Create `notebooks/daft/embeddings_stackexchange.py` with boilerplate and PEP 723 block (deps: `daft[aws]>=0.7`, `sentence-transformers>=5.3`, `torch>=2.11`, `accelerate>=1.13`, `ipywidgets>=8.1`) | ✅ | 2026-03-27 |
+| TASK-008 | Implement content — (1) version print + `get_device()` detection, (2) config (`MAX_ROWS=10_000`, `MODEL_NAME="all-MiniLM-L6-v2"`), (3) load RedPajama StackExchange JSONL from S3 with anonymous access, (4) struct field extraction for url/question_score, (5) embedding via `@daft.udf` with `SentenceTransformer` on detected device (model initialized once outside the UDF), (6) semantic similarity search via `sentence_transformers.util.semantic_search` linking low-visibility to top questions, (7) display results with similarity scores, (8) summary markdown with source tutorial link (PAT-009) | ✅ | 2026-03-27 |
+| TASK-009 | Run `mise run pre-commit` — fix any lint/typecheck/sync issues until clean | ✅ | 2026-03-27 |
 
 ### Phase 4: Text-to-Image Generation (`text_to_image_generation.py`)
 
@@ -195,7 +201,7 @@ Each phase covers one notebook end-to-end: scaffold, implement content, and pass
 - **RISK-001**: S3 anonymous access may require correct `region_name` per bucket — Common Crawl is `us-east-1`. OpenImages data uses Daft's public mirror (`s3://daft-public-data`) which works with default region (no override needed). Mitigation: test each S3 config during implementation.
 - **RISK-002**: `selectolax` may lack wheels for some platforms (e.g., older macOS ARM). Mitigation: it has good wheel coverage as of 2025; if issues arise, fall back to `beautifulsoup4`.
 - **RISK-003**: Stable Diffusion model download is ~4GB — notebook 4 needs a warning cell about download size and time.
-- **RISK-004**: Daft `@daft.func()` and `.apply()` APIs may evolve between releases. Mitigation: pin `>=0.7` and test against current stable. Note: `@daft.udf` (batch/class-based) and `num_gpus` are not used. **Confirmed in Phase 1**: (1) `.url.download()` → `.download()`, `.image.decode()` → `.decode_image()` (accessor namespaces removed), (2) `.apply()` on Image columns passes `numpy.ndarray` (RGB), not `PIL.Image` — use `Image.fromarray()` to convert.
+- **RISK-004**: Daft `@daft.func()` and `.apply()` APIs may evolve between releases. Mitigation: pin `>=0.7` and test against current stable. Note: `@daft.udf` (batch/class-based) and `num_gpus` are not used. **Confirmed in Phase 1**: (1) `.url.download()` → `.download()`, `.image.decode()` → `.decode_image()` (accessor namespaces removed), (2) `.apply()` on Image columns passes `numpy.ndarray` (RGB), not `PIL.Image` — use `Image.fromarray()` to convert. **Confirmed in Phase 3**: (3) `.struct.get("field")` → `.get("field")` (struct accessor namespace removed), (4) `@daft.udf` deprecated in 0.7, use `@daft.func` (row-wise) or `@daft.cls` (stateful batch) instead.
 - **RISK-005**: `igraph>=1.0` is a major version bump from the 0.x series — API changes are possible (e.g., function renames). Mitigation: verify `Graph.connected_components()` API against 1.0 docs during implementation. C extension compilation risk remains; pre-built wheels cover most platforms. Verify Colab compatibility during TEST-006.
 - **RISK-006**: `daft[aws]` extras pull in `boto3`, which may cause version conflicts with other packages in the PEP 723 venv. Mitigation: PEP 723 venvs are isolated per notebook, so conflicts are limited to each notebook's own dependency set.
 - **RISK-007**: `transformers>=5.3` and `sentence-transformers>=5.3` are major version bumps from the source tutorials (which used 4.x and 3.x respectively). Mitigation: verify `StableDiffusionPipeline` and `SentenceTransformer` APIs against current docs during implementation. Pin exact major if breaking changes are found.
