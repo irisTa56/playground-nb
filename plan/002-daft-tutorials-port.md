@@ -1,9 +1,15 @@
 ---
 goal: Port 4 Daft tutorial notebooks (minhash dedup, embeddings, text-to-image, image color query) into this repo
-version: "1.4"
+version: "1.5"
 date_created: 2026-03-27
 last_updated: 2026-03-27
 change_log:
+  - date: 2026-03-27
+    version: "1.5"
+    summary: >
+      Phase 2 complete. Implemented MinHash deduplication notebook using
+      `daft.datasets.common_crawl()`, built-in `.normalize()`/`.minhash()`,
+      LSH banding with self-join, and igraph connected components.
   - date: 2026-03-27
     version: "1.4"
     summary: >
@@ -88,9 +94,9 @@ Each phase covers one notebook end-to-end: scaffold, implement content, and pass
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-004 | Create `notebooks/daft/minhash_dedup_common_crawl.py` with boilerplate and PEP 723 block (deps: `daft[aws]>=0.7`, `selectolax>=0.4`, `scipy>=1.17`, `igraph>=1.0`, `pandas>=3.0`, `matplotlib>=3.10`, `ipywidgets>=8.1`) | | |
-| TASK-005 | Implement content — (1) version print cell, (2) config constants (`NUM_WARC_FILES=2`, `K=64`, `NGRAM_SIZE=5`, `LSH_THRESHOLD=0.7`), (3) S3 data ingestion with `IOConfig(s3=S3Config(anonymous=True, region_name="us-east-1"))`, (4) HTML parsing via `@daft.func()` + `selectolax`, (5) MinHash signature computation via `@daft.func()` (K=64, 5-gram), (6) `optimal_param(threshold, K)` helper (from datasketch) to compute `B, R` dynamically with `assert B * R == K`, (7) LSH banding via `col("min_hashes").list.chunk(R)` + `monotonically_increasing_id`, (8) candidate pair detection via self-join on band hashes, (9) connected components via `igraph`, (10) deduplication — keep one representative per component, (11) matplotlib visualization of duplicate distribution, (12) summary markdown | | |
-| TASK-006 | Run `mise run pre-commit` — fix any lint/typecheck/sync issues until clean | | |
+| TASK-004 | Create `notebooks/daft/minhash_dedup_common_crawl.py` with boilerplate and PEP 723 block (deps: `daft[aws]>=0.7`, `selectolax>=0.4`, `scipy>=1.17`, `igraph>=1.0`, `pandas>=3.0`, `matplotlib>=3.10`, `ipywidgets>=8.1`) | ✅ | 2026-03-27 |
+| TASK-005 | Implement content — (1) version print cell, (2) config constants (`NUM_WARC_FILES=2`, `K=64`, `NGRAM_SIZE=5`, `LSH_THRESHOLD=0.7`), (3) S3 data ingestion via `daft.datasets.common_crawl()` with `IOConfig(s3=S3Config(anonymous=True, region_name="us-east-1"))`, (4) HTML parsing via `@daft.func()` + `selectolax`, (5) text normalization via built-in `.normalize()`, (6) MinHash via built-in `.minhash()` (K=64, 5-gram, xxhash), (7) `optimal_param(threshold, K)` helper via scipy to compute `B, R` dynamically with `assert B * R == K`, (8) LSH banding via per-band `.apply()` hash + `union_all`, (9) candidate pair detection via self-join on band hashes, (10) connected components via `igraph`, (11) deduplication — keep one representative per component via left join, (12) matplotlib visualization of duplicate distribution, (13) summary markdown with source tutorial link (PAT-009) | ✅ | 2026-03-27 |
+| TASK-006 | Run `mise run pre-commit` — fix any lint/typecheck/sync issues until clean | ✅ | 2026-03-27 |
 
 ### Phase 3: Embeddings StackExchange (`embeddings_stackexchange.py`)
 
@@ -120,6 +126,20 @@ Each phase covers one notebook end-to-end: scaffold, implement content, and pass
 |------|-------------|-----------|------|
 | TASK-013 | In `pytorch_dataloader_tabular.py`, `pytorch_dataloader_text.py`, `pytorch_dataloader_image.py`: move `import os` from the setup cell to the cell where `os` is first used (e.g., `os.environ["DAFT_PROGRESS_BAR"]` or `os.cpu_count()`). Run `mise run pre-commit` to verify. | ✅ | 2026-03-27 |
 | TASK-014 | Update CLAUDE.md boilerplate description and `/create-notebook` skill to clarify that the setup cell imports are limited to `re`, `subprocess`, `sys`, `Path`. Notebook-specific stdlib imports like `os` go in the cell where they are first needed. | ✅ | 2026-03-27 |
+
+### Phase 6: ~~Boilerplate Fix~~ (Cancelled)
+
+- ~~GOAL-006~~: Investigation revealed the root cause was NOT `VIRTUAL_ENV` targeting. The `_get_deps()` function's `In[ip.execution_count]` raises `IndexError` in VS Code's Jupyter extension, falling back to `Path(__file__).read_text()`. When another notebook is previewed in VS Code, `__file__` points to that file instead, causing wrong dependencies to be extracted. **Fix**: close other notebook previews before running. No boilerplate change required — the existing fallback mechanism works correctly when `__file__` points to the current file.
+
+### Phase 7: Daft `show()` output fix
+
+- GOAL-007: Daft's `df.show()` overwrites all prior output in the same Jupyter cell. Audit all notebooks for `print()` + `.show()` in the same cell, split into separate cells where needed. Consider adding this as a rule in CLAUDE.md or PAT entry.
+
+| Task | Description | Completed | Date |
+|------|-------------|-----------|------|
+| TASK-018 | Split `print()` + `df.show()` into separate cells in `minhash_dedup_common_crawl.py` (5 locations). | ✅ | 2026-03-27 |
+| TASK-019 | Audit and fix the same issue in existing notebooks (`image_color_query.py`, `pytorch_dataloader_tabular.py`, `pytorch_dataloader_text.py`, `pytorch_dataloader_image.py`, `colpali_vision_retriever.py`). | | |
+| TASK-020 | Add a Daft-specific rule to `.claude/rules/` about not mixing `print()` and Daft `.show()` in the same cell (Daft's widget rendering overwrites prior cell output). | | |
 
 ## 3. Alternatives
 
