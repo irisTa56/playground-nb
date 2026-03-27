@@ -121,6 +121,8 @@ df = daft.from_glob_path(
 df = df.where(df["size"].between(200_000, 300_000)).limit(MAX_IMAGES)
 
 print(f"Selected up to {MAX_IMAGES} images (200–300 KB each)")
+
+# %%
 df.show(5)
 
 # %% [markdown]
@@ -135,6 +137,8 @@ df = df.with_column("image", df["image"].decode_image())
 
 df = df.collect()
 print(f"Downloaded and decoded {len(df)} images")
+
+# %%
 df.show(3)
 
 # %% [markdown]
@@ -186,6 +190,8 @@ top_red = top_red.select("path", "redness", "image")
 top_red = top_red.collect()
 
 print(f"Top {TOP_N} reddest images:")
+
+# %%
 top_red.show(TOP_N)
 
 # %% [markdown]

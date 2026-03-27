@@ -1,9 +1,15 @@
 ---
 goal: Port 4 Daft tutorial notebooks (minhash dedup, embeddings, text-to-image, image color query) into this repo
-version: "1.5"
+version: "1.6"
 date_created: 2026-03-27
 last_updated: 2026-03-27
 change_log:
+  - date: 2026-03-27
+    version: "1.6"
+    summary: >
+      Phase 7 complete. Split print()+show() in image_color_query.py (3 locations),
+      confirmed no issues in other notebooks, added .claude/rules/daft.md with
+      show()-separation and progress-bar-suppression rules.
   - date: 2026-03-27
     version: "1.5"
     summary: >
@@ -138,8 +144,8 @@ Each phase covers one notebook end-to-end: scaffold, implement content, and pass
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
 | TASK-018 | Split `print()` + `df.show()` into separate cells in `minhash_dedup_common_crawl.py` (5 locations). | ✅ | 2026-03-27 |
-| TASK-019 | Audit and fix the same issue in existing notebooks (`image_color_query.py`, `pytorch_dataloader_tabular.py`, `pytorch_dataloader_text.py`, `pytorch_dataloader_image.py`, `colpali_vision_retriever.py`). | | |
-| TASK-020 | Add a Daft-specific rule to `.claude/rules/` about not mixing `print()` and Daft `.show()` in the same cell (Daft's widget rendering overwrites prior cell output). | | |
+| TASK-019 | Audit and fix the same issue in existing notebooks (`image_color_query.py`, `pytorch_dataloader_tabular.py`, `pytorch_dataloader_text.py`, `pytorch_dataloader_image.py`, `colpali_vision_retriever.py`). | ✅ | 2026-03-27 |
+| TASK-020 | Add a Daft-specific rule to `.claude/rules/` about not mixing `print()` and Daft `.show()` in the same cell (Daft's widget rendering overwrites prior cell output). | ✅ | 2026-03-27 |
 
 ## 3. Alternatives
 
