@@ -37,7 +37,7 @@ Source notebooks:
 ## 1. Requirements & Constraints
 
 - **REQ-001**: Each notebook must be a `.py` file in Jupytext percent format under `notebooks/daft/`
-- **REQ-002**: PEP 723 setup cell (`_get_deps`, `_run`, `_setup`) must be identical to existing notebooks (source of truth: `notebooks/daft/pytorch_dataloader_tabular.py` lines 25-89)
+- **REQ-002**: PEP 723 setup cell (`_get_deps`, `_run`, `_setup` and the imports they require: `re`, `subprocess`, `sys`, `Path`) must be identical to existing notebooks. `import os` is NOT part of the boilerplate — it belongs in the cell where it is first used (e.g., `os.environ`, `os.cpu_count()`). Source of truth: `notebooks/daft/pytorch_dataloader_tabular.py` lines 25-89 (to be updated by TASK-013).
 - **REQ-003**: Each notebook must be self-contained — installs deps, downloads data, detects accelerators
 - **REQ-004**: All S3 access must be anonymous (no AWS credentials required)
 - **REQ-005**: No `!pip install` or `%pip install` — dependencies handled by PEP 723 + `_setup()`
@@ -56,6 +56,7 @@ Source notebooks:
 - **PAT-006**: Image display uses Daft's built-in DataFrame rendering — `df.show()` / `df.collect()` natively renders Image columns inline in Jupyter. No explicit `IPython.display` or `matplotlib.imshow` needed. Exception: text_to_image (Phase 4) uses `IPython.display.display()` + PIL for generated images outside the Daft DataFrame.
 - **PAT-007**: `ipywidgets>=8.1` is required for Daft/tqdm Jupyter progress bar rendering. Include in all notebooks.
 - **PAT-008**: UDF patterns — follow source tutorials: use `@daft.func()` (element-wise) and `.apply()` (column-wise). Do not use `@daft.udf` (batch/class-based API).
+- **PAT-009**: Each notebook's introductory markdown must include a link to the original Daft tutorial it was ported from, with a note that it has been adapted for Daft 0.7+ APIs.
 
 ## 2. Implementation Steps
 
@@ -100,6 +101,15 @@ Each phase covers one notebook end-to-end: scaffold, implement content, and pass
 | TASK-010 | Create `notebooks/daft/text_to_image_generation.py` with boilerplate and PEP 723 block (deps: `daft[aws]>=0.7`, `transformers>=5.3`, `diffusers>=0.37`, `torch>=2.11`, `accelerate>=1.13`, `Pillow>=12.1`, `ipywidgets>=8.1`). Use stable `daft>=0.7`, not nightly. | | |
 | TASK-011 | Implement content — (1) version print + `get_device()` with explicit CPU warning for Stable Diffusion, (2) config (`NUM_IMAGES=3`, `MODEL_ID="runwayml/stable-diffusion-v1-5"`), (3) load parquet from S3 (url, description, aesthetic_score), filter top-scoring prompts, (4) `StableDiffusionPipeline` setup with dtype per device (`float16` on CUDA, `float32` otherwise), (5) generation via `.apply()` (pipeline is initialized once outside the UDF; do not use `@daft.udf` or `num_gpus`), (6) execute and collect results, (7) display generated images via `IPython.display.display()` + PIL (images are outside Daft DataFrame at this point), (8) summary markdown with model download size warning (~4GB) | | |
 | TASK-012 | Run `mise run pre-commit` — fix any lint/typecheck/sync issues until clean | | |
+
+### Phase 5: Boilerplate Cleanup (`import os` separation)
+
+- GOAL-005: Move `import os` out of the PEP 723 setup cell in existing notebooks. `os` is not used by `_get_deps`/`_run`/`_setup` — it belongs in the first cell that needs it. Also update CLAUDE.md and `/create-notebook` skill to reflect the corrected boilerplate boundary.
+
+| Task | Description | Completed | Date |
+|------|-------------|-----------|------|
+| TASK-013 | In `pytorch_dataloader_tabular.py`, `pytorch_dataloader_text.py`, `pytorch_dataloader_image.py`: move `import os` from the setup cell to the cell where `os` is first used (e.g., `os.environ["DAFT_PROGRESS_BAR"]` or `os.cpu_count()`). Run `mise run pre-commit` to verify. | | |
+| TASK-014 | Update CLAUDE.md boilerplate description and `/create-notebook` skill to clarify that the setup cell imports are limited to `re`, `subprocess`, `sys`, `Path`. Notebook-specific stdlib imports like `os` go in the cell where they are first needed. | | |
 
 ## 3. Alternatives
 
@@ -149,7 +159,7 @@ Each phase covers one notebook end-to-end: scaffold, implement content, and pass
 - **RISK-001**: S3 anonymous access may require correct `region_name` per bucket — Common Crawl is `us-east-1`. OpenImages data uses Daft's public mirror (`s3://daft-public-data`) which works with default region (no override needed). Mitigation: test each S3 config during implementation.
 - **RISK-002**: `selectolax` may lack wheels for some platforms (e.g., older macOS ARM). Mitigation: it has good wheel coverage as of 2025; if issues arise, fall back to `beautifulsoup4`.
 - **RISK-003**: Stable Diffusion model download is ~4GB — notebook 4 needs a warning cell about download size and time.
-- **RISK-004**: Daft `@daft.func()` and `.apply()` APIs may evolve between releases. Mitigation: pin `>=0.7` and test against current stable. Note: `@daft.udf` (batch/class-based) and `num_gpus` are not used.
+- **RISK-004**: Daft `@daft.func()` and `.apply()` APIs may evolve between releases. Mitigation: pin `>=0.7` and test against current stable. Note: `@daft.udf` (batch/class-based) and `num_gpus` are not used. **Confirmed in Phase 1**: (1) `.url.download()` → `.download()`, `.image.decode()` → `.decode_image()` (accessor namespaces removed), (2) `.apply()` on Image columns passes `numpy.ndarray` (RGB), not `PIL.Image` — use `Image.fromarray()` to convert.
 - **RISK-005**: `igraph>=1.0` is a major version bump from the 0.x series — API changes are possible (e.g., function renames). Mitigation: verify `Graph.connected_components()` API against 1.0 docs during implementation. C extension compilation risk remains; pre-built wheels cover most platforms. Verify Colab compatibility during TEST-006.
 - **RISK-006**: `daft[aws]` extras pull in `boto3`, which may cause version conflicts with other packages in the PEP 723 venv. Mitigation: PEP 723 venvs are isolated per notebook, so conflicts are limited to each notebook's own dependency set.
 - **RISK-007**: `transformers>=5.3` and `sentence-transformers>=5.3` are major version bumps from the source tutorials (which used 4.x and 3.x respectively). Mitigation: verify `StableDiffusionPipeline` and `SentenceTransformer` APIs against current docs during implementation. Pin exact major if breaking changes are found.
