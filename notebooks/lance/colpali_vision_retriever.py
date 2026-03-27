@@ -47,8 +47,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#   "torch>=2.10",
-#   "torchvision>=0.25",
+#   "torch>=2.11",
+#   "torchvision>=0.26",
 #   "colpali-engine==0.2.2",
 #   # Pin to a version colpali-engine 0.2.2 was tested against; newer
 #   # versions change PaliGemmaProcessor <image> token handling and
@@ -56,7 +56,7 @@
 #   "transformers==4.44.2",
 #   "lancedb>=0.30",
 #   "tantivy>=0.25",
-#   "pillow>=12.0",
+#   "Pillow>=12.1",
 #   "pdf2image>=1.17",
 #   "pypdf>=6.0",
 #   "mteb>=1.12,<1.13",
@@ -145,7 +145,8 @@ def get_device() -> torch.device:
     return torch.device("cpu")
 
 
-print(f"Using device: {get_device()}")
+DEVICE = get_device()
+print(f"Using device: {DEVICE}")
 
 # %% [markdown]
 # ## Clone the vision-retrieval helper library

@@ -26,11 +26,11 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#   "torch>=2.10",
-#   "torchvision>=0.22",
+#   "torch>=2.11",
+#   "torchvision>=0.26",
 #   "polars>=1.39",
 #   "daft>=0.7",
-#   "Pillow>=10.0",
+#   "Pillow>=12.1",
 #   "matplotlib>=3.10",
 #   "kaggle>=2.0",
 #   "pandas>=3.0",

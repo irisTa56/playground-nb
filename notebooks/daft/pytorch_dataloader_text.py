@@ -26,7 +26,7 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#   "torch>=2.10",
+#   "torch>=2.11",
 #   "pandas>=3.0",
 #   "polars>=1.39",
 #   "daft>=0.7",
