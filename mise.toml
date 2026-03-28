@@ -1,10 +1,9 @@
 [tools]
-python = "3.12"
-uv = "latest"
 gitleaks = "latest"
-cargo-binstall = "latest"
-"cargo:lychee" = "latest"
-"cargo:rumdl" = "latest"
+lychee = "latest"
+python = "3.12"
+rumdl = "latest"
+uv = "latest"
 
 [tasks.pre-commit]
 description = "Run pre-commit checks"
