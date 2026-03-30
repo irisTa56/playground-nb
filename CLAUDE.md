@@ -28,6 +28,9 @@ uv venv --python "$(mise which python)"
 # Run all pre-commit checks (secrets, links, markdown, nb sync/strip, lint, typecheck)
 mise run pre-commit
 
+# Quick check without nb sync/strip (good for natural breakpoints)
+mise run base-checks
+
 # Individual tasks
 mise run lint              # ruff check --fix + format
 mise run typecheck         # ty check per notebook (uses PEP 723 venvs)
@@ -50,10 +53,18 @@ mise generate git-pre-commit --write --task=pre-commit
 
 ## Pre-commit
 
-Before finishing a task that modifies files, run `mise run pre-commit` and fix all errors. Do not consider the task complete until pre-commit passes cleanly.
+Run `mise run base-checks` at natural breakpoints during work, not just before commits.
+Before finishing a task that modifies files, run `mise run pre-commit` and fix all errors.
+Do not consider the task complete until pre-commit passes cleanly.
 
 ## Conventions
 
+- Documentation and code comments in English.
+- Prefer correct solutions over workarounds: do not paper over problems with comments or hacks — fix the root cause.
+- Markdown: one sentence per line (semantic line breaks) for git-friendly diffs.
+  - Bullet list items: keep each item on one line (no mid-item line breaks).
+  - Use nested bullets to break out sub-points rather than appending sentences.
+- Markdown linting uses rumdl with MD013 (line length) disabled — see `.rumdl.toml`.
 - Notebooks should be self-contained: install their own deps, download data, and detect accelerators.
 - The PEP 723 setup cell (`_get_deps`, `_run`, `_setup`) shares the same **core logic** across all notebooks. `_get_deps` and `_run` are identical everywhere; `_setup()` may append notebook-specific post-install steps (e.g., system-package checks) after the common `uv pip install` block. When modifying the shared core, apply the same change to every notebook. Use `/create-notebook` to scaffold new notebooks with the correct boilerplate.
 - **Dependency version pins**: When adding or updating PEP 723 dependencies, look up the latest stable release on PyPI and pin the minimum to that minor version (e.g., `torch>=2.11`, not `torch>=2.0`). This keeps notebooks on modern APIs and avoids silent compatibility issues with older versions.

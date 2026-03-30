@@ -6,17 +6,23 @@ rumdl = "latest"
 uv = "latest"
 
 [tasks.pre-commit]
-description = "Run pre-commit checks"
+description = "Run checks and re-stage formatted files"
+depends = [
+  "base-checks",
+  "nb:sync",
+  "nb:stripout",
+]
+run = "git add -u"
+
+[tasks.base-checks]
+description = "Run checks and auto-format"
 depends = [
   "secrets",
   "links",
   "format-md",
-  "nb:sync",
-  "nb:stripout",
   "lint",
   "typecheck",
 ]
-run = "git diff --name-only -- 'notebooks/**/*.ipynb' | xargs git add"
 
 [tasks.secrets]
 description = "Scan for leaked secrets"
