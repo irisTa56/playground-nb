@@ -256,9 +256,12 @@ def _flickr8k_batches(batch_size: int = 256) -> Iterator[pa.RecordBatch]:
         )
 
 
-reader = pa.RecordBatchReader.from_batches(SCHEMA, _flickr8k_batches())
-lance.write_dataset(reader, LANCE_DIR, schema=SCHEMA)
-print(f"Wrote Lance dataset to {LANCE_DIR}")
+if not LANCE_DIR.exists():
+    reader = pa.RecordBatchReader.from_batches(SCHEMA, _flickr8k_batches())
+    lance.write_dataset(reader, LANCE_DIR, schema=SCHEMA)
+    print(f"Wrote Lance dataset to {LANCE_DIR}")
+else:
+    print(f"Lance dataset already exists at {LANCE_DIR}, skipping write")
 
 # %% [markdown]
 # ### Verify the dataset
