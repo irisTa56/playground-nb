@@ -1,9 +1,17 @@
 ---
 goal: Add a Lance x Hugging Face Hub notebook demonstrating remote dataset access, blob handling, and vector search
-version: "1.1"
+version: "1.2"
 date_created: 2026-03-31
 last_updated: 2026-03-31
 change_log:
+  - date: 2026-03-31
+    version: "1.2"
+    summary: >
+      Review fixes: replaced torchcodec video decoding with
+      IPython.display.Video for simpler inline playback, removed heavy
+      dependencies (torch, torchcodec, matplotlib, Pillow, numpy), added
+      ipython to deps, fixed caption/blob row ID mismatch bug using
+      with_row_id scanner.
   - date: 2026-03-31
     version: "1.1"
     summary: >
@@ -18,7 +26,7 @@ change_log:
     summary: >
       Initial plan based on https://lancedb.com/blog/lance-x-huggingface-a-new-era-of-sharing-multimodal-data/
 owner: takayuki
-status: Planned
+status: In progress
 tags:
   - feature
   - notebook
@@ -30,7 +38,7 @@ tags:
 
 # Introduction
 
-![Status: Planned](https://img.shields.io/badge/status-Planned-blue)
+![Status: In progress](https://img.shields.io/badge/status-In%20progress-yellow)
 
 Add a self-contained notebook `notebooks/lance/lance_huggingface_hub.py` that demonstrates the Lance format integration with Hugging Face Hub, based on the [Lance x Hugging Face blog post](https://lancedb.com/blog/lance-x-huggingface-a-new-era-of-sharing-multimodal-data/).
 The notebook walks through three capabilities announced in the blog:
@@ -64,10 +72,10 @@ This complements the existing `clip_multimodal_lance.py` (local Lance workflow) 
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-001 | Scaffold `notebooks/lance/lance_huggingface_hub.py` using `/create-notebook` skill. Add Colab badge, title, and description markdown linking to the blog post. Note that network access is required | | |
-| TASK-002 | Add PEP 723 `# /// script` block with dependencies: `pylance>=4.0`, `lancedb>=0.30`, `pyarrow>=23.0`, `torchcodec>=0.11`, `torch>=2.11`, `matplotlib>=3.10`, `Pillow>=12.1`, `numpy>=2.4`. Pin versions to latest stable at implementation time. Look up actual latest versions on PyPI before writing | | |
-| TASK-003 | Verify `_get_deps`, `_run`, `_setup` boilerplate matches existing notebooks exactly | | |
-| TASK-004 | Add environment/version verification cell printing installed package versions | | |
+| TASK-001 | Scaffold `notebooks/lance/lance_huggingface_hub.py` using `/create-notebook` skill. Add Colab badge, title, and description markdown linking to the blog post. Note that network access is required | ✅ | 2026-03-31 |
+| TASK-002 | Add PEP 723 `# /// script` block with dependencies: `pylance>=4.0`, `lancedb>=0.30`, `pyarrow>=23.0`, `ipython>=9.2`. Pin versions to latest stable at implementation time. Look up actual latest versions on PyPI before writing | ✅ | 2026-03-31 |
+| TASK-003 | Verify `_get_deps`, `_run`, `_setup` boilerplate matches existing notebooks exactly | ✅ | 2026-03-31 |
+| TASK-004 | Add environment/version verification cell printing installed package versions | ✅ | 2026-03-31 |
 
 ### Phase 2: Remote Dataset Access — Metadata Scanning & Filtering
 
@@ -75,21 +83,21 @@ This complements the existing `clip_multimodal_lance.py` (local Lance workflow) 
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-005 | Add markdown cell explaining Lance's remote dataset access via `hf://` URIs, how range reads enable efficient metadata-only scanning, and how blobs are skipped unless explicitly requested | | |
-| TASK-006 | Open the OpenVid-1M dataset via `lance.dataset("hf://datasets/lance-format/Openvid-1M/data/train.lance")`. Print schema, row count, and column names | | |
-| TASK-007 | Demonstrate column-selective scanning: use `ds.scanner(columns=["caption", "aesthetic_score"], filter="aesthetic_score >= 4.5", limit=10)` to fetch metadata without loading video blobs. Print results as a list of dicts | | |
-| TASK-008 | Add a note comparing this to the traditional workflow (download entire dataset, then filter locally) to highlight I/O savings | | |
+| TASK-005 | Add markdown cell explaining Lance's remote dataset access via `hf://` URIs, how range reads enable efficient metadata-only scanning, and how blobs are skipped unless explicitly requested | ✅ | 2026-03-31 |
+| TASK-006 | Open the OpenVid-1M dataset via `lance.dataset("hf://datasets/lance-format/Openvid-1M/data/train.lance")`. Print schema, row count, and column names | ✅ | 2026-03-31 |
+| TASK-007 | Demonstrate column-selective scanning: use `ds.scanner(columns=["caption", "aesthetic_score"], filter="aesthetic_score >= 4.5", limit=10)` to fetch metadata without loading video blobs. Print results as a list of dicts | ✅ | 2026-03-31 |
+| TASK-008 | Add a note comparing this to the traditional workflow (download entire dataset, then filter locally) to highlight I/O savings | ✅ | 2026-03-31 |
 
 ### Phase 3: Blob Handling — Video Access & Decoding
 
-- GOAL-003: Fetch video blobs on demand and decode them using `torchcodec`.
+- GOAL-003: Fetch video blobs on demand and display them inline.
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-009 | Add markdown cell explaining Lance's blob API — first-class large binary objects that return file-like objects with lazy reads, enabling video-native operations like frame seeking | | |
-| TASK-010 | Fetch a single video blob from OpenVid-1M using `ds.take_blobs("video_blob", ids=[selected_id])`. Save to a temp file and print file size. Note: verify the actual blob column name from the schema in TASK-006 — the blog uses `video_blob` but it may differ | | |
-| TASK-011 | Decode the video blob using `torchcodec.decoders.VideoDecoder`. Extract a short frame range (e.g., first 10 frames), print tensor shape, and display a sample frame using matplotlib | | |
-| TASK-012 | Clean up the temp video file after display | | |
+| TASK-009 | Add markdown cell explaining Lance's blob API — first-class large binary objects that return file-like objects with lazy reads, enabling video-native operations like frame seeking | ✅ | 2026-03-31 |
+| TASK-010 | Fetch a single video blob from OpenVid-1M using `ds.take_blobs("video_blob", ids=[row_id])` with `with_row_id=True` scanner. Save to a temp file and print file size. Note: verify the actual blob column name from the schema in TASK-006 — the blog uses `video_blob` but it may differ | ✅ | 2026-03-31 |
+| TASK-011 | Display the video blob inline using `IPython.display.Video` with `embed=True`. This is simpler and more direct than frame-level decoding with torchcodec, and avoids heavy dependencies (torch, matplotlib, numpy, Pillow) | ✅ | 2026-03-31 |
+| TASK-012 | Clean up the temp video file after display | ✅ | 2026-03-31 |
 
 ### Phase 4: Vector Search via LanceDB
 
@@ -97,10 +105,10 @@ This complements the existing `clip_multimodal_lance.py` (local Lance workflow) 
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-013 | Add markdown cell explaining how Lance datasets can bundle embeddings and indexes as first-class citizens, enabling vector search without external infrastructure | | |
-| TASK-014 | Connect to LAION-1M via `lancedb.connect("hf://datasets/lance-format/laion-1m/data")` and open the `train` table. Print schema and row count | | |
-| TASK-015 | Fetch an existing row's embedding from the table (e.g., `tbl.to_lance().take([0])`) and use it as the query vector for nearest-neighbor search. Use `tbl.search(query, vector_column_name="img_emb").limit(5).to_list()`. Print captions and distances — results should be semantically similar to the seed row | | |
-| TASK-016 | Add a markdown cell noting that a real CLIP model could replace the seed-row approach to enable text-to-image search as a possible extension | | |
+| TASK-013 | Add markdown cell explaining how Lance datasets can bundle embeddings and indexes as first-class citizens, enabling vector search without external infrastructure | ✅ | 2026-03-31 |
+| TASK-014 | Connect to LAION-1M via `lancedb.connect("hf://datasets/lance-format/laion-1m/data")` and open the `train` table. Print schema and row count | ✅ | 2026-03-31 |
+| TASK-015 | Fetch an existing row's embedding from the table (e.g., `tbl.to_lance().take([0])`) and use it as the query vector for nearest-neighbor search. Use `tbl.search(query, vector_column_name="img_emb").limit(5).to_list()`. Print captions and distances — results should be semantically similar to the seed row | ✅ | 2026-03-31 |
+| TASK-016 | Add a markdown cell noting that a real CLIP model could replace the seed-row approach to enable text-to-image search as a possible extension | ✅ | 2026-03-31 |
 
 ### Phase 5: Summary & Cleanup
 
@@ -108,9 +116,9 @@ This complements the existing `clip_multimodal_lance.py` (local Lance workflow) 
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-017 | Add a summary markdown cell recapping the three capabilities demonstrated and linking to Lance documentation and the HF Hub Lance datasets page | | |
-| TASK-018 | Add cleanup cell removing any temp files created (downloaded video blobs). No large data directories to clean up since all access was remote | | |
-| TASK-019 | Run `mise run base-checks` at natural breakpoints during development. Run `mise run pre-commit` as final validation and fix all errors | | |
+| TASK-017 | Add a summary markdown cell recapping the three capabilities demonstrated and linking to Lance documentation and the HF Hub Lance datasets page | ✅ | 2026-03-31 |
+| TASK-018 | Add cleanup cell removing any temp files created (downloaded video blobs). No large data directories to clean up since all access was remote | ✅ | 2026-03-31 |
+| TASK-019 | Run `mise run base-checks` at natural breakpoints during development. Run `mise run pre-commit` as final validation and fix all errors | ✅ | 2026-03-31 |
 | TASK-020 | Test that the notebook cells execute without errors (network-dependent cells require internet access) | | |
 
 ## 3. Alternatives
@@ -125,11 +133,7 @@ This complements the existing `clip_multimodal_lance.py` (local Lance workflow) 
 - **DEP-001**: `pylance` — Lance format library for remote dataset access via `hf://` URIs (PyPI package `pylance` provides `import lance`)
 - **DEP-002**: `lancedb` — LanceDB for vector search on Hub-hosted tables
 - **DEP-003**: `pyarrow` — Arrow interop for schema inspection and table operations
-- **DEP-004**: `torchcodec` — video blob decoding to torch tensors
-- **DEP-005**: `torch` — tensor operations and torchcodec dependency
-- **DEP-006**: `Pillow` — image display for video frames
-- **DEP-007**: `numpy` — array conversion for matplotlib display
-- **DEP-008**: `matplotlib` — visualization of video frames and search results
+- **DEP-004**: `ipython` — inline video display via `IPython.display.Video`
 
 ## 5. Files
 
@@ -153,7 +157,7 @@ This complements the existing `clip_multimodal_lance.py` (local Lance workflow) 
 - **RISK-004**: Video blob download may be slow or large. Mitigate by limiting to a single blob and printing file size before decode.
 - **ASSUMPTION-001**: The `lance-format/Openvid-1M` and `lance-format/laion-1m` datasets are publicly accessible on HF Hub without authentication.
 - **ASSUMPTION-002**: The `hf://` URI scheme is supported by the versions of `pylance` and `lancedb` available on PyPI at implementation time.
-- **ASSUMPTION-003**: `torchcodec` can decode video blobs from Lance's file-like blob objects (or from bytes written to a temp file). macOS ARM is confirmed supported (wheels published for macOS 11.0+/12.0+ ARM64).
+- **ASSUMPTION-003**: Video blobs from Lance can be saved to a temp file and displayed inline via `IPython.display.Video`. No frame-level decoding is needed for the demo.
 - **ASSUMPTION-004**: `pylance>=4.0` includes `hf://` URI support natively via the Rust backend (OpenDAL). No separate `huggingface_hub` install is needed for public datasets. If authentication is required for private datasets, `huggingface_hub` may be needed — but all datasets used in this notebook are public.
 - **ASSUMPTION-005**: Tests (TEST-003 through TEST-006) require network access and are executed manually in a connected environment, not in offline CI.
 
