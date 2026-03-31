@@ -56,6 +56,7 @@ mise generate git-pre-commit --write --task=pre-commit
 Run `mise run base-checks` at natural breakpoints during work, not just before commits.
 Before finishing a task that modifies files, run `mise run pre-commit` and fix all errors.
 Do not consider the task complete until pre-commit passes cleanly.
+This applies to **all** file types — notebooks, config, and plan/documentation files alike.
 
 ## Conventions
 
